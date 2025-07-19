@@ -1,6 +1,9 @@
 import requests
+from dotenv import load_dotenv
+import os
 
-TOKEN = "PAzsBbG5Sgzp13lfFSj8V3kaB3ns40PKJ3vZ-14ca9Y"
+load_dotenv()
+TOKEN = os.getenv("TIBBER_TOKEN")
 
 query = """
 {
