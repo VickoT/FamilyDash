@@ -1,6 +1,6 @@
 import requests
 
-TOKEN = "PAzsBbG5Sgzp13lfFSj8V3kaB3ns40PKJ3vZ-14ca9Y"
+TOKEN = ""
 
 query = """
 {
