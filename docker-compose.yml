@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  dash:
+    build: .
+    ports:
+      - "8050:8050"
+    env_file:
+      - .env
+    restart: unless-stopped
