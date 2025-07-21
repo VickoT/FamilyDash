@@ -11,7 +11,13 @@ Docker based dashboard application.
 
 
 Tibber test file works
-:x
+The Tibber API: [LINK](https://developer.tibber.com/docs/overview)
 
 **The python dotenv**
+**MQTT**
 
+- Put in kiosk mode
+
+
+[Raspberry Pi Touch Display 2](https://www.electrokit.com/raspberry-pi-touch-display-2)
+[Pi4](https://www.electrokit.com/raspberry-pi-4-model-b/4gb)
