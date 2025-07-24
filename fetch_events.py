@@ -1,10 +1,19 @@
 import pickle
 import datetime
+import os
+from dotenv import load_dotenv
+
+
 from googleapiclient.discovery import build
+
+
+load_dotenv()
+token_path = os.getenv("GOOGLE_TOKEN_PATH", ".config/token.pickle")
+
 
 def main():
     # Ladda autentiserings-token
-    with open('token.pickle', 'rb') as token:
+    with open(token_path, 'rb') as token:
         creds = pickle.load(token)
 
     service = build('calendar', 'v3', credentials=creds)

@@ -101,21 +101,21 @@ if price_current and price_current.get("energy") is not None:
         y=1.05,
         xref='x',
         yref='paper',
-        text="Now",
+        text="Nu",
         showarrow=False,
         font=dict(color="red", size=12)
     )
 
 fig.update_layout(
     template="plotly_dark",
-    title="Electricity Price (öre/kWh)",
+    title="Elpris (øre/kWh)",
     height=500,
     width=1280,
     margin=dict(t=60, b=40, l=60, r=40),
     showlegend=False
 )
 fig.update_xaxes(tickformat="%H", showgrid=False)
-fig.update_yaxes(title="öre/kWh", gridcolor="rgba(255,255,255,0.05)")
+fig.update_yaxes(title="øre/kWh", gridcolor="rgba(255,255,255,0.05)")
 
 # === Dash layout ===
 app = Dash(__name__)
@@ -136,14 +136,7 @@ app.layout = html.Div(
                 style={"height": "360px", "width": "100%"},
                 config={"displayModeBar": False}
             )
-        ],
-        style={
-            "display": "flex",
-            "justifyContent": "flex-end",
-            "alignItems": "flex-end",
-            "height": "500px",
-            "border": "1px dashed gray"
-        })
+        ])
     ]
 )
 
