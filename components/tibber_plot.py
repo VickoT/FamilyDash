@@ -1,7 +1,7 @@
 # components/tibber_plot.py
 import pandas as pd
 import matplotlib.colors as mcolors
-import matplotlib.cm as cm
+from matplotlib import colormaps as cm
 import plotly.graph_objects as go
 
 import os
@@ -16,7 +16,7 @@ df_all = pd.read_csv(DATAFILE)
 # === Gradient coloring ===
 def get_gradient_color(value, vmin=0, vmax=150, cmap="turbo"):
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-    colormap = cm.get_cmap(cmap)
+    colormap = cm.get_cmap(cmap)  # ← detta är fixen
     rgba = colormap(norm(value))
     return mcolors.to_hex(rgba)
 
@@ -74,3 +74,7 @@ def make_tibber_figure():
     fig.update_yaxes(title="øre/kWh", gridcolor="rgba(255,255,255,0.05)")
 
     return fig
+
+if __name__ == "__main__":
+    fig = make_tibber_figure()
+    fig.show()
