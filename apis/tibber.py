@@ -35,8 +35,8 @@ data = response.json()
 homes = data["data"]["viewer"]["homes"]
 price_info = homes[0]["currentSubscription"]["priceInfo"]
 #price_current = price_info.get("current")
-prices_today = price_info.get("today", [])
-prices_tomorrow = price_info.get("tomorrow", [])
+prices_day1 = price_info.get("today", [])
+prices_day2 = price_info.get("tomorrow", [])
 
 def to_dataframe(prices, label):
     df = pd.DataFrame(prices)
@@ -45,10 +45,12 @@ def to_dataframe(prices, label):
     df["day"] = label
     return df
 
-if prices_tomorrow:
-    dfs = [to_dataframe(prices_today, "Today"), to_dataframe(prices_tomorrow, "Tomorrow")]
+if prices_day2:
+    dfs = [to_dataframe(prices_day1, "today"), to_dataframe(prices_day2,
+                                                            "tomorrow")]
     df_all = pd.concat(dfs).sort_values("startsAt")
-    df_app.to_csv("data/tibber_prices.csv", index=False)
+    df_all.to_csv("data/tibber_prices.csv", index=False)
+    print(df_all)
 
 else:
-    raise SystemExit("No 'Tomorrow' data available")
+    raise SystemExit("No 'Day2' data available")
