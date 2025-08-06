@@ -6,3 +6,11 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

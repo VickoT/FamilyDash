@@ -1,0 +1,18 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y cron && \
+    apt-get clean
+
+COPY . .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Add the crontab file
+COPY crontab /etc/cron.d/fetch-cron
+RUN chmod 0644 /etc/cron.d/fetch-cron && crontab /etc/cron.d/fetch-cron
+
+# Run the cron service in the foreground
+CMD ["cron", "-f"]
