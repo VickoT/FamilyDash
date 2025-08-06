@@ -46,9 +46,16 @@ chromium-browser --kiosk http://localhost:8050
   These scripts are executed via `crontab` on a schedule appropriate to the data source
   (e.g. once per day for Tibber, every 15 minutes for weather, etc).
 
+
 - In `app.py`, each output component (e.g. a graph or text box) has its own Dash callback
   that reads from the corresponding file in `data/` and updates the component.
 
 - Each callback is triggered by a dedicated `dcc.Interval` component,
   allowing different parts of the dashboard to update at different rates
   (e.g. Tibber prices every hour, Google Calendar every 5 minutes).
+
+
+
+WHAT I HAVE DONE:
+* create a crontab container to fetch data from APIs
+I NEED TO set up callbacks to update the dashboard app
