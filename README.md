@@ -30,3 +30,14 @@ improvements to KMS and Weston.
 ```
 
 Google credentials are stored in the .config folder.
+
+SVELTEKIT?
+
+```
+docker compose up --build -d
+chromium-browser --kiosk http://localhost:8050
+```
+
+Smoother loading and rendering of the Tibber data:
+* Tomorrow's price data get published around 1300 each day - until then the
+  existing data should be shown.
