@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from dotenv import load_dotenv
 from pathlib import Path
+from datetime import datetime
 
 # === Setup paths ===
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -59,7 +60,5 @@ if prices_tomorrow:
 else:
     df_all = to_dataframe(prices_today, "today")
 
-
-
-print(df_all)
+print(f"[{datetime.now().isoformat(timespec='seconds')}] Saved {len(df_all)} rows to {PRICES_FILE}")
 df_all.to_csv(PRICES_FILE, index=False)
