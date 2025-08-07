@@ -20,21 +20,21 @@ def get_gradient_color(value, vmin=0, vmax=150, cmap="turbo"):
     rgba = colormap(norm(value))
     return mcolors.to_hex(rgba)
 
-df_all["color"] = df_all["energy_öre"].apply(lambda x: get_gradient_color(x))
+df_all["color"] = df_all["energy_ore"].apply(lambda x: get_gradient_color(x))
 
 # === Create Plotly figure ===
 def make_tibber_figure():
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=df_all["startsAt"],
-        y=df_all["energy_öre"],
+        y=df_all["energy_ore"],
         mode="lines",
         line=dict(width=0, color="rgba(1, 209, 178, 0.2)"),
         fill="tozeroy"
     ))
     fig.add_trace(go.Scatter(
         x=df_all["startsAt"],
-        y=df_all["energy_öre"],
+        y=df_all["energy_ore"],
         mode="lines+markers",
         line=dict(width=2, color="rgba(255,255,255,0.3)"),
         marker=dict(color=df_all["color"], size=8),

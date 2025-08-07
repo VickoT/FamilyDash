@@ -43,19 +43,23 @@ price_info = homes[0]["currentSubscription"]["priceInfo"]
 def to_dataframe(prices, label):
     df = pd.DataFrame(prices)
     df["startsAt"] = pd.to_datetime(df["startsAt"])
-    df["energy_øre"] = df["energy"] * 100
+    df["energy_ore"] = df["energy"] * 100
     df["day"] = label
-    return df[["startsAt", "energy_øre", "day"]]
+    return df[["startsAt", "energy_ore", "day"]]
 
 prices_today = price_info.get("today", [])
 prices_tomorrow = price_info.get("tomorrow", [])
 
-df_all = pd.concat([
-    to_dataframe(prices_today, "today"),
-    to_dataframe(prices_tomorrow, "tomorrow")
-], ignore_index=True)
+if prices_tomorrow:
+    df_all = pd.concat([
+        to_dataframe(prices_today, "today"),
+        to_dataframe(prices_tomorrow, "tomorrow")
+    ], ignore_index=True)
+
+else:
+    df_all = to_dataframe(prices_today, "today")
+
 
 
 print(df_all)
-# === Save to file ===
 df_all.to_csv(PRICES_FILE, index=False)
