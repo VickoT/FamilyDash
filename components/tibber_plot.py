@@ -10,8 +10,6 @@ import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATAFILE = os.path.join(ROOT, "data", "tibber_prices.csv")
 
-#DATAFILE = "../data/tibber_prices.csv"
-df_all = pd.read_csv(DATAFILE)
 
 # === Gradient coloring ===
 def get_gradient_color(value, vmin=0, vmax=150, cmap="turbo"):
@@ -20,10 +18,12 @@ def get_gradient_color(value, vmin=0, vmax=150, cmap="turbo"):
     rgba = colormap(norm(value))
     return mcolors.to_hex(rgba)
 
-df_all["color"] = df_all["energy_ore"].apply(lambda x: get_gradient_color(x))
 
 # === Create Plotly figure ===
 def make_tibber_figure():
+    df_all = pd.read_csv(DATAFILE)
+    df_all["color"] = df_all["energy_ore"].apply(lambda x: get_gradient_color(x))
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=df_all["startsAt"],
