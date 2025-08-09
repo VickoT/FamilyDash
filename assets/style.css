@@ -6,3 +6,15 @@ html, body {
     width: 100%;
     overflow: hidden;
 }
+
+.app-wrapper {
+  background-color: #000000;
+  height: 720px;
+  width: 1280px;
+  padding: 10px;
+}
+
+.title {
+  text-align: center;
+  color: white;
+}

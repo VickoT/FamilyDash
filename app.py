@@ -8,9 +8,9 @@ import math
 app = Dash(__name__)
 
 app.layout = html.Div(
-    style={"backgroundColor": "#000000", "height": "720px", "width": "1280px", "padding": "10px"},
+    className="app-wrapper",
     children=[
-        html.H1("The Anne Family Planner", style={"textAlign": "center", "color": "white"}),
+        html.H1("The Anne Family Planner", className="title"),
 
         dcc.Graph(
             id="tibber-graph",
@@ -28,6 +28,7 @@ app.layout = html.Div(
         )
     ]
 )
+
 
 @app.callback(
     Output("tibber-graph", "figure"),
