@@ -10,6 +10,21 @@ app = Dash(__name__)
 app.layout = html.Div(
     className="app-wrapper",
     children=[
+
+        # Vänsterspalt: 7 dag-rutor (idag + 6)
+        html.Div(
+            className="calendar",
+            children=[
+                html.Div(className="day today", children=html.Div("Idag")),
+                html.Div(className="day", children=html.Div("Dag +1")),
+                html.Div(className="day", children=html.Div("Dag +2")),
+                html.Div(className="day", children=html.Div("Dag +3")),
+                html.Div(className="day", children=html.Div("Dag +4")),
+                html.Div(className="day", children=html.Div("Dag +5")),
+                html.Div(className="day", children=html.Div("Dag +6")),
+            ],
+        ),
+
         html.H1("The Anne Family Planner", className="title"),
 
         # (andra rutor kan du lägga till här senare)
