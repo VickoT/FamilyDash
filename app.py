@@ -12,20 +12,19 @@ app.layout = html.Div(
     children=[
         html.H1("The Anne Family Planner", className="title"),
 
-        dcc.Graph(
-            id="tibber-graph",
-            figure=make_tibber_figure(),
-            style={"height": "360px", "width": "100%"},
-            config={"displayModeBar": False}
+        # (andra rutor kan du lägga till här senare)
+
+        html.Div(
+            className="tibber",   # själva rutan i gridens nedre högra del
+            children=dcc.Graph(
+                id="tibber-graph",
+                figure=make_tibber_figure(),
+                className="tibber-graph",
+                config={"displayModeBar": False}
+            )
         ),
 
-        dcc.Interval(
-            id="interval-component",
-            interval=2 * 60 * 1000,  # update every hour
-            n_intervals=0,
-            max_intervals=-1,
-            disabled=False,
-        )
+        dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0)
     ]
 )
 

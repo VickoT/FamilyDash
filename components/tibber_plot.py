@@ -65,8 +65,9 @@ def make_tibber_figure():
     fig.update_layout(
         template="plotly_dark",
         title="Elpris (øre/kWh)",
-        height=500,
-        width=1280,
+        #height=500,
+        #width=1280,
+        autosize=True,
         margin=dict(t=60, b=40, l=60, r=40),
         showlegend=False
     )
