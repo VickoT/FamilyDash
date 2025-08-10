@@ -1,5 +1,5 @@
 import pickle
-import datetime
+from datetime import datetime, timedelta, UTC
 import os
 from dotenv import load_dotenv
 
@@ -21,14 +21,19 @@ def main():
     # Ange kalender-ID här (t.ex. "Familie")
     calendar_id = 'family12428309117852465721@group.calendar.google.com'
 
-    # Hämta events från nu och en vecka framåt
-    now = datetime.datetime.utcnow().isoformat() + 'Z'
-    one_week = (datetime.datetime.utcnow() + datetime.timedelta(days=7)).isoformat() + 'Z'
+
+    # Hämta events från nu och en vecka framåt – tidszonsmedvetet i UTC
+    now_dt = datetime.now(UTC)
+    one_week_dt = now_dt + timedelta(days=7)
+
+    # Google Calendar vill ha RFC3339. Använd 'Z' för UTC.
+    time_min = now_dt.isoformat().replace("+00:00", "Z")       # ← ÄNDRAT
+    time_max = one_week_dt.isoformat().replace("+00:00", "Z")  # ← ÄNDRAT
 
     events_result = service.events().list(
         calendarId=calendar_id,
-        timeMin=now,
-        timeMax=one_week,
+        timeMin=time_min,
+        timeMax=time_max,
         singleEvents=True,
         orderBy='startTime'
     ).execute()
