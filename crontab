@@ -1,3 +1,6 @@
 # Fetch Tibber prices every day at hh:mm
-30 13 * * * /usr/local/bin/python /app/fetch/fetch_tibber.py >> /app/data/fetch_tibber.log 2>&1
+00 13 * * * /usr/local/bin/python /app/fetch/fetch_tibber.py >> /app/data/fetch_tibber.log 2>&1
+
+# Fetch calendar events every 5 minutes
+*/5 * * * * /usr/local/bin/python /app/fetch/fetch_calendar.py >> /app/data/fetch_calendar.log 2>&1
 
