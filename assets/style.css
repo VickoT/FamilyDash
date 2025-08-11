@@ -1,55 +1,82 @@
-/* assets/style.css */
+/* Bas */
 html, body {
   margin:0; padding:0; background:#000; height:100%; width:100%; overflow:hidden;
 }
 
+/* Grid-layout */
 .app-wrapper{
   width:1280px; height:720px; padding:10px; box-sizing:border-box;
   display:grid;
-  grid-template-columns: 1fr 2fr;   /* 1/3 + 2/3 */
-  grid-template-rows: auto 1fr 1fr; /* titel + halva + halva */
+  grid-template-columns: 1fr 2fr;        /* vänster kolumn + höger */
+  grid-template-rows: auto 1fr 1fr;      /* titel + halva + halva */
   gap:10px;
 }
 
 .title{
-  grid-column: 1 / -1;   /* ← viktigt! gör titeln full bredd */
+  grid-column: 1 / -1;                   /* full bredd */
   margin:0;
   text-align:center;
   color:white;
 }
 
-/* --- Kalenderkolumn (vänster) --- */
+/* Kalenderkolumn (vänster) */
 .calendar{
-  grid-column: 1 / 2;   /* vänster kolumn */
-  grid-row: 2 / 4;     /* sträcker sig över båda raderna */
+  grid-column: 1 / 2;
+  grid-row: 2 / 4;
   display:grid;
-  grid-template-rows: repeat(7, 1fr);   /* 7 jämnhöga rutor */
+  grid-template-rows: repeat(7, 1fr);
   gap:10px;
   min-height:0;
 }
 
 .day{
-  background:#2a3b4a;                   /* ljusare mörkblågrå */
+  background:#2a3b4a;
   border:1px solid rgba(255,255,255,.15);
   border-radius:6px;
   color:#e8eef5;
   padding:10px;
-  overflow:hidden;                       /* innehåll klipper snyggt */
-  display:flex; align-items:center;      /* enkel vertikal centrering nu */
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;      /* rubrik överst, lista under */
+  align-items:flex-start;     /* vänsterjusterat */
   font-weight:600;
 }
 
 .day.today{
-  background:#1e2a36;                    /* mörkare för dagens ruta */
+  background:#1e2a36;
   border-color: rgba(255,255,255,.25);
 }
 
+/* Rubrik */
+.day-title {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-size: 1rem;
+  color: #8a939c; /* lite mörkare än events */
+}
 
-/* Nedre högra rutan */
+/* Eventlista */
+.calendar .day-content{
+  margin:6px 0 0;
+  padding:0;
+  display:block !important;
+}
+
+.calendar .day-content li {
+  display:block;
+  list-style:none;
+  margin:2px 0;
+  font-size: 0.85rem;
+  color: #e8eef5; /* ljusare än rubrik */
+}
+
+.calendar .day-content li::before{ content:none !important; }
+
+/* Tibberrutan (höger) */
 .tibber{
   grid-column: 2 / 3;
   grid-row: 2 / 4;
   min-height:0;
 }
-
 .tibber-graph{ width:100%; height:100%; }

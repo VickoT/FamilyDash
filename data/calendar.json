@@ -1,0 +1,48 @@
+{
+  "generated_at": "2025-08-11T16:13+02:00",
+  "days": [
+    {
+      "label": "Man 11/Aug",
+      "events": []
+    },
+    {
+      "label": "Tir 12/Aug",
+      "events": [
+        {
+          "time": null,
+          "title": "test 3 tis"
+        }
+      ]
+    },
+    {
+      "label": "Ons 13/Aug",
+      "events": [
+        {
+          "time": "10:00",
+          "title": "test2 ons"
+        }
+      ]
+    },
+    {
+      "label": "Tor 14/Aug",
+      "events": []
+    },
+    {
+      "label": "Fre 15/Aug",
+      "events": []
+    },
+    {
+      "label": "Lør 16/Aug",
+      "events": []
+    },
+    {
+      "label": "Søn 17/Aug",
+      "events": [
+        {
+          "time": null,
+          "title": "Strandhemsdagen+loppis"
+        }
+      ]
+    }
+  ]
+}
