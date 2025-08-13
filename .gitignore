@@ -1,6 +1,6 @@
 .env
 .config
-data/**
+data/*
 .venv/
 __pycache__/
 *.pyc
