@@ -1,8 +1,10 @@
 .env
 .config
+data/**
 .venv/
 __pycache__/
 *.pyc
 .DS_Store
 client_secret_*.json
 token.pickle
+
