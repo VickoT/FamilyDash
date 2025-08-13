@@ -46,7 +46,7 @@ app.layout = html.Div(
     className="app-wrapper",
     children=[
         html.Div(id="calendar", className="calendar", children=calendar_boxes()),
-        html.H1("The Anne Family Planner", className="title"),
+#        html.H1("The Anne Family Planner", className="title"),
         html.Div(
             className="tibber",
             children=dcc.Graph(

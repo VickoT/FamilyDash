@@ -13,6 +13,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    env_file:
+      - .env
     volumes:
       - ./data:/app/data
+      - ./.config:/app/.config:ro
     restart: unless-stopped
