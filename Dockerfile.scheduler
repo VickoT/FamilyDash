@@ -1,20 +1,47 @@
+#FROM python:3.12-slim
+#
+#WORKDIR /app
+#
+#RUN apt-get update && \
+#    apt-get install -y cron tzdata && \
+#    apt-get clean
+#
+#ENV TZ=Europe/Stockholm
+#
+#COPY . .
+#
+#RUN pip install --no-cache-dir -r requirements.txt
+#
+## Add the crontab file
+#COPY crontab /etc/cron.d/fetch-cron
+#RUN chmod 0644 /etc/cron.d/fetch-cron && crontab /etc/cron.d/fetch-cron
+#
+## Run the cron service in the foreground
+#CMD ["cron", "-f"]
+#
+#
 FROM python:3.12-slim
 
 WORKDIR /app
 
+# Installera cron (och tzdata om du vill ha rätt TZ)
 RUN apt-get update && \
-    apt-get install -y cron tzdata && \
-    apt-get clean
+    apt-get install -y --no-install-recommends cron tzdata && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Tidszon (valfritt)
 ENV TZ=Europe/Stockholm
 
-COPY . .
-
+# Installera Python-paket först (bättre cache)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Add the crontab file
+# Kopiera resten av koden (inkl .env så vi kan sourca den i cron)
+COPY . .
+
+# Lägg in crontab
 COPY crontab /etc/cron.d/fetch-cron
 RUN chmod 0644 /etc/cron.d/fetch-cron && crontab /etc/cron.d/fetch-cron
 
-# Run the cron service in the foreground
+# Kör cron i förgrund
 CMD ["cron", "-f"]

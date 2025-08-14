@@ -13,6 +13,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    #environment:
+    #  GOOGLE_CLIENT_SECRET_FILE: /app/.config/client_secret.json
+    #  GOOGLE_TOKEN_PATH: /app/.config/token.pickle
+    #  TIBBER_TOKEN: ${TIBBER_TOKEN}
     env_file:
       - .env
     volumes:
