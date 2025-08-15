@@ -69,4 +69,10 @@ def update_everything(_):
     return make_tibber_figure(), calendar_boxes()
 
 if __name__ == "__main__":
+    try:
+        from fetch import fetch_calendar, fetch_tibber
+        fetch_calendar.main()
+        fetch_tibber.main()
+    except Exception as e:
+        print(f"Initial fetch failed: {e} (starting server anyway)")
     app.run(debug=False, host="0.0.0.0", port=8050)
