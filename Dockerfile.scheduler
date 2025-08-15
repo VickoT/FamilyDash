@@ -41,7 +41,6 @@ COPY . .
 
 # Lägg in crontab
 COPY crontab /etc/cron.d/fetch-cron
-RUN chmod 0644 /etc/cron.d/fetch-cron && crontab /etc/cron.d/fetch-cron
-
-# Kör cron i förgrund
+RUN chmod 0644 /etc/cron.d/fetch-cron
+# DO NOT: crontab /etc/cron.d/fetch-cron
 CMD ["cron", "-f"]
