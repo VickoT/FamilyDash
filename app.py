@@ -1,6 +1,8 @@
 from dash import Dash, html, dcc
 from dash.dependencies import Input, Output
 from components.tibber_plot import make_tibber_figure
+from components.washer_box import washer_box
+
 import json, os
 
 CAL_PATH = "data/calendar.json"
@@ -46,19 +48,35 @@ app.layout = html.Div(
     className="app-wrapper",
     children=[
         html.Div(id="calendar", className="calendar", children=calendar_boxes()),
-#        html.H1("The Anne Family Planner", className="title"),
+
+        # wrapper för högerkolumnen
         html.Div(
             className="tibber",
-            children=dcc.Graph(
-                id="tibber-graph",
-                figure=make_tibber_figure(),
-                className="tibber-graph",
-                config={"displayModeBar": False},
-            ),
+            children=[
+                html.Div(id="washer-box", className="box"),  # boxen ovanför
+                dcc.Graph(
+                    id="tibber-graph",
+                    figure=make_tibber_figure(),
+                    className="tibber-graph",
+                    config={"displayModeBar": False},
+                ),
+            ],
         ),
+
         dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0),
     ]
 )
+
+
+# Uppdatera washer-box varje gång intervallet tickar
+@app.callback(
+    Output("washer-box", "children"),
+    Input("interval-component", "n_intervals"),
+    prevent_initial_call=False,
+)
+def _update_washer(_n):
+    # returnerar html-innehållet (titel + värde) från CSV:n
+    return washer_box()
 
 @app.callback(
     Output("tibber-graph", "figure"),
