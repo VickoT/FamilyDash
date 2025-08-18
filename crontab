@@ -12,4 +12,6 @@ TZ=Europe/Stockholm
 # Washer effect every 1 minute
 * * * * * root cd /app && /usr/local/bin/python fetch/fetch_washer.py > /app/data/logs/fetch_washer.log 2>&1
 
+# Weather every 30 minutes
+*/30 * * * * root cd /app && /usr/local/bin/python fetch/fetch_weather.py > /app/data/logs/fetch_weather.log 2>&1
 

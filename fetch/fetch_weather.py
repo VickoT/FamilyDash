@@ -66,5 +66,9 @@ def main():
     with open("data/weather.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+    # log row with timestamp
+    ts = datetime.now(ZoneInfo(TZ)).isoformat(timespec="seconds")
+    print(f"[{ts}] ✅ Wrote to data/weather.json")
+
 if __name__ == "__main__":
     main()
