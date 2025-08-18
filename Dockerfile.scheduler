@@ -2,23 +2,19 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Installera cron (och tzdata om du vill ha rätt TZ)
+# Installera cron, tzdata och dos2unix
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends cron tzdata && \
+    apt-get install -y --no-install-recommends cron tzdata dos2unix && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Tidszon (valfritt)
 ENV TZ=Europe/Stockholm
 
-# Installera Python-paket först (bättre cache)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Kopiera resten av koden (inkl .env så vi kan sourca den i cron)
 COPY . .
 
-# Lägg in crontab
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Kopiera in och fixa crontab
 COPY crontab /etc/cron.d/fetch-cron
-RUN chmod 0644 /etc/cron.d/fetch-cron
-# DO NOT: crontab /etc/cron.d/fetch-cron
+RUN dos2unix /etc/cron.d/fetch-cron && chmod 0644 /etc/cron.d/fetch-cron && crontab /etc/cron.d/fetch-cron
+
 CMD ["cron", "-f"]

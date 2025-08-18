@@ -6,6 +6,17 @@ from components.washer_box import washer_box
 from components.calendar_box import calendar_box
 from components.weather_box import weather_box
 
+
+from fetch import fetch_tibber, fetch_calendar, fetch_washer, fetch_weather
+try:
+    fetch_tibber.main()     # <-- flytta hit, före app.layout
+    fetch_calendar.main()
+    fetch_washer.main()
+    fetch_weather.main()
+except Exception as e:
+    print(f"Initial fetch failed: {e}")
+
+
 # Initialize the Dash app
 app = Dash(__name__)
 
@@ -66,12 +77,4 @@ def _update_weather(_n):
     return weather_box()
 
 if __name__ == "__main__":
-    try:
-        from fetch import fetch_calendar, fetch_tibber, fetch_washer, fetch_weather
-        fetch_calendar.main()
-        fetch_tibber.main()
-        fetch_washer.main()
-        fetch_weather.main()
-    except Exception as e:
-        print(f"Initial fetch failed: {e} (starting server anyway)")
     app.run(debug=False, host="0.0.0.0", port=8050)
