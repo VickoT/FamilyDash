@@ -67,6 +67,10 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
   color: #8a939c; /* lite mörkare än events */
 }
 
+.day-title.sunday {
+    color: #cc6666;
+}
+
 /* Eventlista */
 .calendar .day-content{
   margin:6px 0 0;

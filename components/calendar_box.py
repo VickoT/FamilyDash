@@ -27,11 +27,15 @@ def calendar_box(path=CAL_PATH):
                 title = e.get("title", "")
                 items.append(html.Li(f"{t} - {title}" if t else title))
 
+
         boxes.append(
             html.Div(
                 className=f"day{' today' if i == 0 else ''}",
                 children=[
-                    html.Div(label, className="day-title"),
+                    html.Div(
+                        label,
+                        className="day-title" + (" sunday" if "Søn" in label else "")
+                    ),
                     html.Ul(items, className="day-content"),
                 ],
             )
