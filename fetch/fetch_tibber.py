@@ -3,6 +3,7 @@ import os, sys, requests, pandas as pd
 from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # === Paths ===
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,10 +63,12 @@ def fetch_prices():
 
 def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    TZ = ZoneInfo(os.getenv("TZ", "Europe/Stockholm"))
+
     try:
         df_all = fetch_prices()
         df_all.to_csv(PRICES_FILE, index=False)
-        ts = datetime.now().isoformat(timespec="seconds")
+        ts = datetime.now(TZ).isoformat(timespec="seconds")
         msg = f"[{ts}] Saved {len(df_all)} rows to {PRICES_FILE}"
         print(msg)
         try:
@@ -75,7 +78,7 @@ def main() -> int:
             pass
         return 0
     except Exception as e:
-        ts = datetime.now().isoformat(timespec="seconds")
+        ts = datetime.now(TZ).isoformat(timespec="seconds")
         err = f"[{ts}] Tibber fetch FAILED: {e}"
         print(err)
         try:

@@ -2,6 +2,8 @@
 import os, requests
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
 
 load_dotenv()
 
@@ -18,7 +20,8 @@ def fetch_power():
 
 def main():
     w = fetch_power()
-    ts = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+    TZ = ZoneInfo(os.getenv("TZ", "Europe/Stockholm"))
+    ts = datetime.now(TZ).isoformat(timespec="seconds")
     line = f"{ts},{w}\n"
     os.makedirs(os.path.dirname(OUTFILE), exist_ok=True)
     with open(OUTFILE, "a", encoding="utf-8") as f:
