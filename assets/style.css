@@ -103,17 +103,16 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
   font-weight: bold;
 }
 
+/* Bas-stil för alla kort */
 .box {
-  background:#2a3b4a;
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:6px;
-  color:#e8eef5;
-  padding:10px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:600;
-  min-height:80px;   /* makes them visible even if empty */
+  background: #22313d;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  color: #e8eef5;
+  padding: 10px;
+  /* inga flex-egenskaper här */
+  /* ingen global font-weight här */
+  /* ingen min-height här (sätt per komponent om behövs) */
 }
 
 
@@ -130,9 +129,30 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
 .washer-card .time  { font-size:0.8rem; color:#aaa; }
 
 
-.weather-card{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-.wx-title{ font-weight:600; opacity:.9; }
-.wx-row{ display:flex; align-items:center; gap:8px; font-weight:700; }
-.wx-ico{ font-size:1.2rem; line-height:1; }
-.wx-temp{ font-size:1.3rem; }
-.wx-meta{ display:flex; gap:12px; opacity:.85; font-size:.85rem; }
+
+/* Väderkort */
+.weather-card { display:flex; flex-direction:column; gap:8px; }
+
+.wx-title { font-size:0.95rem; opacity:.8; margin-bottom:2px; }
+
+.wx-row-main { display:flex; align-items:center; gap:14px; }
+.wx-ico.big { font-size:64px; line-height:1; }
+.wx-now-col { display:flex; flex-direction:column; gap:2px; }
+.wx-sub { font-size:.85rem; opacity:.75; }
+.wx-now { font-size:2rem; font-weight:600; }
+
+.wx-stats { list-style:none; margin:2px 0 0; padding:0; }
+.wx-stats li { display:flex; justify-content:space-between; margin:2px 0; }
+
+.wx-ts { font-size:.8rem; opacity:.6; margin-top:6px; }
+
+
+.uv { font-weight: 600; }
+
+/* WHO ranges */
+.uv-low        { color: #2e7d32; }  /* grön (1–2)        */
+.uv-medium     { color: #f9a825; }  /* gul (3–5)         */
+.uv-high       { color: #fb8c00; }  /* orange (6–7)      */
+.uv-very-high  { color: #c62828; }  /* röd (8–10)        */
+.uv-extreme    { color: #6a1b9a; }  /* lila (11+)        */
+.uv-unknown    { color: inherit; opacity: .7; }
