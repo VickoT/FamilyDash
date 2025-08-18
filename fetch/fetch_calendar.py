@@ -1,9 +1,8 @@
-import pickle
-from datetime import datetime, timedelta, UTC, timezone
 import os
 import json
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
+from datetime import datetime
 
 load_dotenv()
 token_path = os.getenv("GOOGLE_TOKEN_PATH", ".config/token.pickle")
@@ -86,7 +85,8 @@ def main():
     with open("data/calendar.json", "w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2)
 
-    print("✅ Wrote to data/calendar.json")
+    ts = datetime.now().isoformat(timespec="seconds")
+    print(f"[{ts}] ✅ Wrote to data/calendar.json")
 
 if __name__ == '__main__':
     main()
