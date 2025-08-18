@@ -2,6 +2,7 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 TZ=Europe/Stockholm
 
+
 # Tibber once per day (13:00 local)
 00 13 * * * root cd /app && /usr/local/bin/python fetch/fetch_tibber.py > /app/data/logs/fetch_tibber.log 2>&1
 
@@ -9,5 +10,6 @@ TZ=Europe/Stockholm
 */5 * * * * root cd /app && /usr/local/bin/python fetch/fetch_calendar.py > /app/data/logs/fetch_calendar.log 2>&1
 
 # Washer effect every 1 minute
-* * * * * python /app/fetch/fetch_washer.py > /app/data/logs/fetch_washer.log 2>&1
+* * * * * root cd /app && /usr/local/bin/python fetch/fetch_washer.py > /app/data/logs/fetch_washer.log 2>&1
+
 
