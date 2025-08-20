@@ -28,7 +28,7 @@ def washer_box():
     # Lägg till "active" om > 0.0
     classes = ["box", "washer-card"]
 
-    force = True  # sätt till 1 för att testa
+    force = False  # sätt till 1 för att testa
     if force or (not math.isnan(w) and w > 0.0):
         classes.append("active")
 
