@@ -9,13 +9,12 @@ from components.weather_box import weather_box
 
 from fetch import fetch_tibber, fetch_calendar, fetch_washer, fetch_weather
 try:
-    fetch_tibber.main()     # <-- flytta hit, före app.layout
+    fetch_tibber.main()
     fetch_calendar.main()
     fetch_washer.main()
     fetch_weather.main()
 except Exception as e:
     print(f"Initial fetch failed: {e}")
-
 
 # Initialize the Dash app
 app = Dash(__name__)
@@ -42,7 +41,9 @@ app.layout = html.Div(
     ]
 )
 
-
+# This callback will update the children property, 'Washer placeholder' of the
+# element with the id "washer-box". The callback will be triggered by the
+# interval-component when it gets incremented, every 2 minutes.
 @app.callback(
     Output("washer-box", "children"),
     Input("interval-component", "n_intervals"),

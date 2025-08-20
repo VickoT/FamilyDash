@@ -25,7 +25,7 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
   grid-column: 2 / 3;
   grid-row: 1 / 2;
   display:grid;
-  grid-template-columns: 1fr 1fr;           /* två rutor högst upp */
+  grid-template-columns: 1fr 2fr;           /* två rutor högst upp */
   grid-template-rows: auto 1fr;             /* rad1: små boxar, rad2: stor graf */
   grid-template-areas:
     "weather wash"
@@ -141,7 +141,7 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
 .wx-sub { font-size:.85rem; opacity:.75; }
 .wx-now { font-size:2rem; font-weight:600; }
 
-.wx-stats { list-style:none; margin:2px 0 0; padding:0; }
+.wx-stats { list-style:none; margin:2px 0 0; padding:0; font-size: 1.5rem}
 .wx-stats li { display:flex; justify-content:space-between; margin:2px 0; }
 
 .wx-ts { font-size:.8rem; opacity:.6; margin-top:6px; }
