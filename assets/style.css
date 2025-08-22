@@ -10,14 +10,15 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
   gap:10px;
 }
 
-/* Kalenderkolumn (vänster) */
+/* Kalenderkolumn (vänster) — FLEX så rutor kan växa/krympa dynamiskt */
 .calendar{
   grid-column: 1 / 2;
   grid-row: 1 / 2;
-  display:grid;
-  grid-template-rows: repeat(7, 1fr);
+  display:flex;
+  flex-direction:column;
   gap:10px;
-  min-height:0; /* viktigt för att Plotly/grids inte ska spränga höjden */
+  height:100%;
+  min-height:0;                    /* viktigt i grid-kontekst */
 }
 
 /* Högerkolumn med egen grid */
@@ -39,18 +40,22 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
 #washer-box  { grid-area: wash; }
 #tibber-graph{ grid-area: tibber; width:100%; height:100%; }
 
-
+/* En dagruta */
 .day{
   background:#2a3b4a;
   border:1px solid rgba(255,255,255,.15);
   border-radius:6px;
   color:#e8eef5;
-  padding:10px;
+  padding: 6px 4px 6px 10px;   /* top=6px, right=4px, bottom=6px, left=10px */
   overflow:hidden;
   display:flex;
-  flex-direction:column;      /* rubrik överst, lista under */
-  align-items:flex-start;     /* vänsterjusterat */
+  flex-direction:column;    /* rubrik överst, lista under */
+  align-items:flex-start;
   font-weight:600;
+
+  /* Dynamisk höjd: väx efter innehåll, krymp vid behov, bas-minhöjd */
+  flex: 1 0 auto;
+  min-height:34px;
 }
 
 .day.today{
@@ -65,107 +70,66 @@ html, body { margin:0; padding:0; background:#000; height:100%; width:100%; over
   text-underline-offset: 3px;
   font-size: 1rem;
   color: #8a939c; /* lite mörkare än events */
+  flex: 0 0 auto;
 }
 
-.day-title.sunday {
-    color: #cc6666;
-}
+.day-title.sunday { color:#cc6666; }
 
 /* Eventlista */
 .calendar .day-content{
   margin:6px 0 0;
   padding:0;
   display:block !important;
+  flex: 0 1 auto;           /* låt listan ta plats men inte tvinga utanför */
 }
 
-.calendar .day-content li {
+.calendar .day-content li{
   display:block;
   list-style:none;
   margin:2px 0;
-  font-size: 1.3rem;
-  color: #e8eef5; /* ljusare än rubrik */
+  font-size:1.3rem;
+  color:#e8eef5;            /* ljusare än rubrik */
 }
-
 .calendar .day-content li::before{ content:none !important; }
 
 /* Tibberrutan (höger) */
-.tibber{
-  grid-column: 2 / 3;
-  grid-row: 2 / 4;
-  min-height:0;
-}
+.tibber{ grid-column: 2 / 3; grid-row: 2 / 4; min-height:0; }
 .tibber-graph{ width:100%; height:100%; }
 
-
-.value{
-  color: #ffffff;
-  font-size: 1rem;      /* större text */
-  font-weight: bold;
-}
+/* Värden */
+.value{ color:#ffffff; font-size:1rem; font-weight:bold; }
 
 /* Bas-stil för alla kort */
-.box {
-  background: #22313d;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 6px;
-  color: #e8eef5;
-  padding: 10px;
-  /* inga flex-egenskaper här */
-  /* ingen global font-weight här */
-  /* ingen min-height här (sätt per komponent om behövs) */
+.box{
+  background:#22313d;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:6px;
+  color:#e8eef5;
+  padding:10px;
 }
 
-/* Skrik-grön när aktiv */
+/* Tvättmaskin */
 .washer-card.active {
-  background: #39ff14;         /* neon-grön */
-  color: #000;
-  box-shadow: 0 0 16px #39ff14;
-  transition: background .15s, color .15s, box-shadow .15s;
+  background:#39ff14; color:#000; box-shadow:0 0 16px #39ff14;
+  transition:background .15s, color .15s, box-shadow .15s;
 }
-
-#washer-box {
-  display: flex;
-  align-items: center;   /* vertikalt */
-  justify-content: center; /* horisontellt */
-}
-
-.washer-card {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-}
-
+#washer-box { display:flex; align-items:center; justify-content:center; }
+.washer-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
 .washer-card .title { font-size:1rem; font-weight:600; opacity:.9; }
 .washer-card .value { font-size:1.4rem; font-weight:700; color:#fff; }
-.washer-card .time  { font-size:0.8rem; color:#aaa; }
-
-
+.washer-card .time  { font-size:.8rem; color:#aaa; }
 
 /* Väderkort */
 .weather-card { display:flex; flex-direction:column; gap:8px; }
-
-.wx-title { font-size:0.95rem; opacity:.8; margin-bottom:2px; }
-
+.wx-title { font-size:.95rem; opacity:.8; margin-bottom:2px; }
 .wx-row-main { display:flex; align-items:center; gap:14px; }
 .wx-ico.big { font-size:64px; line-height:1; }
 .wx-now-col { display:flex; flex-direction:column; gap:2px; }
 .wx-sub { font-size:.85rem; opacity:.75; }
 .wx-now { font-size:2rem; font-weight:600; }
-
-.wx-stats { list-style:none; margin:2px 0 0; padding:0; font-size: 1.5rem}
+.wx-stats { list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
 .wx-stats li { display:flex; justify-content:space-between; margin:2px 0; }
-
 .wx-ts { font-size:.8rem; opacity:.6; margin-top:6px; }
-
-
-.uv { font-weight: 600; }
-
-/* WHO ranges */
-.uv-low        { color: #2e7d32; }  /* grön (1–2)        */
-.uv-medium     { color: #f9a825; }  /* gul (3–5)         */
-.uv-high       { color: #fb8c00; }  /* orange (6–7)      */
-.uv-very-high  { color: #c62828; }  /* röd (8–10)        */
-.uv-extreme    { color: #6a1b9a; }  /* lila (11+)        */
-.uv-unknown    { color: inherit; opacity: .7; }
+.uv { font-weight:600; }
+.uv-low{color:#2e7d32;} .uv-medium{color:#f9a825;} .uv-high{color:#fb8c00;}
+.uv-very-high{color:#c62828;} .uv-extreme{color:#6a1b9a;} .uv-unknown{color:inherit; opacity:.7;}
