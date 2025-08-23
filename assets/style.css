@@ -1,135 +1,222 @@
-/* Bas */
-html, body { margin:0; padding:0; background:#000; height:100%; width:100%; overflow:hidden; }
+/**********************************************************
+ * 1) Bas / Variabler
+ **********************************************************/
+:root{
+  --bg-app: #000;
+  --bg-card: #000;
+  --bg-day: #2a3b4a;
+  --bg-day-today: #1e2a36;
 
-/* Ytterlayout */
-.app-wrapper{
-  width:1280px; height:720px; padding:10px; box-sizing:border-box;
-  display:grid;
-  grid-template-columns: 1fr 2fr;   /* vänster = kalender, höger = panel */
-  grid-template-rows: 1fr;          /* fyll hela höjden */
-  gap:10px;
+  --fg-text: #e8eef5;
+  --fg-muted: #8a939c;
+  --fg-sunday: #cc6666;
+
+  --border: rgba(255,255,255,.12);
+  --border-day: rgba(255,255,255,.15);
+  --border-day-today: rgba(255,255,255,.25);
+
+  --radius: 6px;
+  --radius-lg: 8px;
+
+  --gap: 10px;
+  --pad: 2px;
 }
 
-/* Kalenderkolumn (vänster) — FLEX så rutor kan växa/krympa dynamiskt */
-.calendar{
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  height:100%;
-  min-height:0;                    /* viktigt i grid-kontekst */
-}
-
-/* Högerkolumn med egen grid */
-.right-panel{
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-  display:grid;
-  grid-template-columns: 1fr 2fr;           /* två rutor högst upp */
-  grid-template-rows: auto 1fr;             /* rad1: små boxar, rad2: stor graf */
-  grid-template-areas:
-    "weather wash"
-    "tibber  tibber";
-  gap:10px;
-  min-height:0;
-}
-
-/* Placera barn i områdena */
-#weather-box { grid-area: weather; }
-#washer-box  { grid-area: wash; }
-#tibber-graph{ grid-area: tibber; width:100%; height:100%; }
-
-/* En dagruta */
-.day{
-  background:#2a3b4a;
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:6px;
-  color:#e8eef5;
-  padding: 6px 4px 6px 10px;   /* top=6px, right=4px, bottom=6px, left=10px */
+html, body{
+  margin:0; padding:0;
+  background:var(--bg-app);
+  height:100%; width:100%;
   overflow:hidden;
-  display:flex;
-  flex-direction:column;    /* rubrik överst, lista under */
-  align-items:flex-start;
-  font-weight:600;
+}
 
-  /* Dynamisk höjd: väx efter innehåll, krymp vid behov, bas-minhöjd */
-  flex: 1 0 auto;
-  min-height:34px;
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+/**********************************************************
+ * 2) Top-level grid (kalender | väder + widgets ovanför,
+ *                    tibber under; kalender spänner alla rader)
+ **********************************************************/
+.app-wrapper{
+  width: 1280px;
+  height: 720px;
+  padding: 5px;
+
+  display: grid;
+  /* 3 kolumner: kalender | väder | widgets */
+  grid-template-columns: 1fr 1fr 2fr;
+  /* Rad 1 = auto (höjd efter innehåll), Rad 2 = fyll resterande (tibber) */
+  grid-template-rows: auto 1fr;
+  gap: var(--gap);
+
+  /* Gör stretch till standard så alla boxar fyller sina gridytor */
+  place-items: stretch stretch;
+}
+
+/* Placera huvudboxar */
+#calendar-box { grid-column: 1 / 2; grid-row: 1 / -1; min-height:0; }
+#weather-box  { grid-column: 2 / 3; grid-row: 1 / 2;  min-height:0; }
+#widgets-box  { grid-column: 3 / 4; grid-row: 1 / 2;  min-height:0; }
+#tibber-box   { grid-column: 2 / 4; grid-row: 2 / 3;  min-height:0; }
+
+/**********************************************************
+ * 3) Gemensam kort-stil
+ **********************************************************/
+.box{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg-text);
+  padding: var(--pad);
+}
+
+/**********************************************************
+ * 4) Kalenderkolumn
+ **********************************************************/
+/**********************************************************
+ * 4) Kalenderkolumn — fyll 100% av höjden, ingen scroll.
+ *    Dagar delar på höjden men kan växa/krympa efter behov.
+ **********************************************************/
+
+#calendar-box{
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  height: 100%;     /* täck hela radhöjden */
+  min-height: 0;    /* viktigt i grid-kontekst */
+  overflow: visible;/* ingen skroll här */
+}
+
+/* Dagkort: baseras på innehåll, men delar på utrymmet.
+   - flex-grow: 1  → alla deltar i att fylla höjden
+   - flex-shrink: 1→ kan krympa när någon annan behöver mer
+   - flex-basis: auto → innehållet påverkar "baseline"
+*/
+.day{
+  background: var(--bg-day);
+  border: 1px solid var(--border-day);
+  border-radius: var(--radius);
+  color: var(--fg-text);
+  padding: 6px 4px 6px 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  flex: 1 1 auto;   /* 🡐 nyckeln: väx/krymp efter behov */
+  min-height: 34px; /* bottengräns så de aldrig blir för tunna */
+  overflow: hidden; /* klipp absolut spill (ingen intern scroll) */
 }
 
 .day.today{
-  background:#1e2a36;
-  border-color: rgba(255,255,255,.25);
+  background: var(--bg-day-today);
+  border-color: var(--border-day-today);
 }
 
-/* Rubrik */
-.day-title {
+/* Rubriken som förr */
+.day-label,
+.day-title{
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
   font-size: 1rem;
-  color: #8a939c; /* lite mörkare än events */
+  color: var(--fg-muted);
   flex: 0 0 auto;
 }
 
-.day-title.sunday { color:#cc6666; }
+/* Söndag röd – robust */
+.day .day-title.sunday,
+.day .day-label.sunday{ color: var(--fg-sunday) !important; }
 
-/* Eventlista */
-.calendar .day-content{
-  margin:6px 0 0;
-  padding:0;
-  display:block !important;
-  flex: 0 1 auto;           /* låt listan ta plats men inte tvinga utanför */
+/* Listan får ta plats men får också krympa när andra dagar behöver utrymme */
+.events,
+.day-content{
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: block !important;
+  font-size: 1.3rem;
+  font-weight: 600;
+
+  flex: 1 1 auto;   /* 🡐 låt listan vara elastisk */
+  min-height: 0;    /* krävs i flex-kolumner för att få krympa */
+  overflow: hidden; /* ingen intern scroll, text wrappar */
+  text-wrap: pretty;/* snygg radbrytning där det går */
 }
 
-.calendar .day-content li{
-  display:block;
-  list-style:none;
-  margin:2px 0;
-  font-size:1.3rem;
-  color:#e8eef5;            /* ljusare än rubrik */
+/* Sista dagkortet: ingen extra glapp i botten */
+#calendar-box .day:last-child{ margin-bottom: 0; }
+
+/**********************************************************
+ * 5) Väder (layout-hjälpare, själva innehållet i komponent)
+ **********************************************************/
+.weather-card { display:flex; flex-direction:column; gap:8px; }
+.wx-title     { font-size:.95rem; opacity:.8; margin-bottom:2px; }
+.wx-row-main  { display:flex; align-items:center; gap:14px; }
+.wx-ico.big   { font-size:64px; line-height:1; }
+.wx-now-col   { display:flex; flex-direction:column; gap:2px; }
+.wx-sub       { font-size:.85rem; opacity:.75; }
+.wx-now       { font-size:2rem; font-weight:600; }
+.wx-stats     { list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
+.wx-stats li  { display:flex; justify-content:space-between; margin:2px 0; }
+.wx-ts        { font-size:.8rem; opacity:.6; margin-top:6px; }
+
+/* UV färger */
+.uv{ font-weight:600; }
+.uv-low{ color:#2e7d32; }
+.uv-medium{ color:#f9a825; }
+.uv-high{ color:#fb8c00; }
+.uv-very-high{ color:#c62828; }
+.uv-extreme{ color:#6a1b9a; }
+.uv-unknown{ color:inherit; opacity:.7; }
+
+/**********************************************************
+ * 6) Widgets – 4×2 intern grid
+ **********************************************************/
+#widgets-box{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: var(--gap);
+  min-height: 0;
 }
-.calendar .day-content li::before{ content:none !important; }
 
-/* Tibberrutan (höger) */
-.tibber{ grid-column: 2 / 3; grid-row: 2 / 4; min-height:0; }
-.tibber-graph{ width:100%; height:100%; }
-
-/* Värden */
-.value{ color:#ffffff; font-size:1rem; font-weight:bold; }
-
-/* Bas-stil för alla kort */
-.box{
-  background:#22313d;
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:6px;
-  color:#e8eef5;
-  padding:10px;
+.tile{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--pad);
+  display:flex; align-items:center; justify-content:center;
+  color: var(--fg-text); font-weight:600;
+  min-height:0;
 }
 
-/* Tvättmaskin */
-.washer-card.active {
-  background:#39ff14; color:#000; box-shadow:0 0 16px #39ff14;
-  transition:background .15s, color .15s, box-shadow .15s;
-}
+/* Frivilliga spans för större widgets */
+.tile.span-2c { grid-column: span 2; }
+.tile.span-2r { grid-row: span 2; }
+
+/* Tvättmaskinsruta (exempel) */
 #washer-box { display:flex; align-items:center; justify-content:center; }
 .washer-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
 .washer-card .title { font-size:1rem; font-weight:600; opacity:.9; }
 .washer-card .value { font-size:1.4rem; font-weight:700; color:#fff; }
 .washer-card .time  { font-size:.8rem; color:#aaa; }
+.washer-card.active{
+  background:#39ff14; color:#000; box-shadow:0 0 16px #39ff14;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
 
-/* Väderkort */
-.weather-card { display:flex; flex-direction:column; gap:8px; }
-.wx-title { font-size:.95rem; opacity:.8; margin-bottom:2px; }
-.wx-row-main { display:flex; align-items:center; gap:14px; }
-.wx-ico.big { font-size:64px; line-height:1; }
-.wx-now-col { display:flex; flex-direction:column; gap:2px; }
-.wx-sub { font-size:.85rem; opacity:.75; }
-.wx-now { font-size:2rem; font-weight:600; }
-.wx-stats { list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
-.wx-stats li { display:flex; justify-content:space-between; margin:2px 0; }
-.wx-ts { font-size:.8rem; opacity:.6; margin-top:6px; }
-.uv { font-weight:600; }
-.uv-low{color:#2e7d32;} .uv-medium{color:#f9a825;} .uv-high{color:#fb8c00;}
-.uv-very-high{color:#c62828;} .uv-extreme{color:#6a1b9a;} .uv-unknown{color:inherit; opacity:.7;}
+/**********************************************************
+ * 7) Tibber
+ **********************************************************/
+#tibber-box{ min-height:0; }
+#tibber-box .tibber-graph{
+  width: 100%;
+  height: 100%;
+}
+
+/**********************************************************
+ * 8) Hjälpklasser
+ **********************************************************/
+.value{ color:#fff; font-size:1rem; font-weight:bold; }
+.hide{ display:none !important; }
