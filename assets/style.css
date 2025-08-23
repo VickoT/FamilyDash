@@ -3,7 +3,7 @@
  **********************************************************/
 :root{
   --bg-app: #000;
-  --bg-card: #000;
+  --bg-card: #2a3b4a;
   --bg-day: #2a3b4a;
   --bg-day-today: #1e2a36;
 
@@ -63,7 +63,7 @@ html, body{
  * 3) Gemensam kort-stil
  **********************************************************/
 .box{
-  background: var(--bg-card);
+  background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--fg-text);
@@ -150,7 +150,8 @@ html, body{
 /**********************************************************
  * 5) Väder (layout-hjälpare, själva innehållet i komponent)
  **********************************************************/
-.weather-card { display:flex; flex-direction:column; gap:8px; }
+.weather-card { display:flex; flex-direction:column; gap:8px;
+    background:var(--bg-card); padding: 10px; margin: 5px;}
 .wx-title     { font-size:.95rem; opacity:.8; margin-bottom:2px; }
 .wx-row-main  { display:flex; align-items:center; gap:14px; }
 .wx-ico.big   { font-size:64px; line-height:1; }
@@ -182,7 +183,7 @@ html, body{
 }
 
 .tile{
-  background: var(--bg-card);
+  background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--pad);
@@ -196,7 +197,7 @@ html, body{
 .tile.span-2r { grid-row: span 2; }
 
 /* Tvättmaskinsruta (exempel) */
-#washer-box { display:flex; align-items:center; justify-content:center; }
+#washer-box { display:flex; align-items:center; justify-content:center; background:var(--bg-card); }
 .washer-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
 .washer-card .title { font-size:1rem; font-weight:600; opacity:.9; }
 .washer-card .value { font-size:1.4rem; font-weight:700; color:#fff; }

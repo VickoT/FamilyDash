@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output
 from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
-from components.washer_box import washer_box  # behövs i callback
+from components.washer_box import washer_box, washer_render
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
 try:
@@ -36,7 +36,7 @@ app.layout = html.Div(
             id="widgets-box",
             className="widgets box",
             children=[
-                html.Div("Washer",       id="washer-box", className="tile"),
+                washer_box(),
                 html.Div(id="aqi-box",    className="tile"),
                 html.Div(id="sonos-box",  className="tile"),
                 html.Div(id="sensor3-box", className="tile"),
@@ -84,13 +84,14 @@ def cb_weather(_):
     return weather_box()
 
 @app.callback(
-    Output("washer-box", "children"),
+    [Output("washer-box", "children"),
+    Output("washer-box", "className")],
     Input("interval-component", "n_intervals"),
     prevent_initial_call=False,
 )
 def cb_washer(_):
-    # washer_box() should return the inner content for the tile
-    return washer_box()
+    children, classes = washer_render()
+    return children, classes
 
 @app.callback(
     Output("tibber-graph", "figure"),
