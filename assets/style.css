@@ -199,30 +199,42 @@ html, body{
 /* Tvättmaskinsruta */
 #washer-box{
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  /* background:var(--bg-card);  <-- TA BORT DENNA RAD */
-}
+  gap:6px;
 
-.washer-card{
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:6px;
-}
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  color:var(--fg-text);
 
-.washer-card .time{ font-size:.8rem; color:#aaa; }
-
-/* Aktivt läge → grön bakgrund + glow (fungerar nu) */
-.washer-card.active{
-  background:#39ff14; color:#000; box-shadow:0 0 16px #39ff14;
   transition: background .15s, color .15s, box-shadow .15s;
 }
 
-/* Lägg till snurr-animationen (saknas i din CSS) */
-.washer-svg{ width:84px; height:84px; display:block; color: #000; }
-@keyframes washer-spin{ to { transform: rotate(360deg); } }
-.washer-card.active .washer-svg .door{
+#washer-box .time {
+  font-size:.8rem;
+  color:#aaa;
+}
+
+/* Aktivt läge → grön bakgrund + glow */
+#washer-box.active {
+  background:#39ff14;
+  color:#000;
+  box-shadow:0 0 16px #39ff14;
+}
+
+/* Snurr-animation */
+@keyframes washer-spin { to { transform: rotate(360deg); } }
+#washer-box.active .washer-svg .door {
   animation: washer-spin 1.6s linear infinite;
   will-change: transform;
+}
+
+.washer-svg {
+  width:84px;
+  height:84px;
+  display:block;
+  color: #000; /* följer textfärg (vit → grön) */
 }
 
 /**********************************************************
