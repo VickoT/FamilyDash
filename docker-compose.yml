@@ -1,26 +1,19 @@
+# Run prepared images from GHCR - no build, no code mount
 services:
   dash:
-    build: .
-    ports:
-      - "8050:8050"
-    env_file:
-      - .env
+    image: ghcr.io/vickot/familydash-dash:latest
+    platform: linux/arm64
+    ports: ["8050:8050"]
+    env_file: .env
     restart: unless-stopped
     volumes:
-      - ./data:/app/data
-      - .:/app
+      - ./data:/app/data:ro
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile.scheduler
-    #environment:
-    #  GOOGLE_CLIENT_SECRET_FILE: /app/.config/client_secret.json
-    #  GOOGLE_TOKEN_PATH: /app/.config/token.pickle
-    #  TIBBER_TOKEN: ${TIBBER_TOKEN}
-    env_file:
-      - .env
+    image: ghcr.io/vickot/familydash-scheduler:latest
+    platform: linux/arm64
+    env_file: .env
+    restart: unless-stopped
     volumes:
       - ./data:/app/data
       - ./.config:/app/.config:ro
-    restart: unless-stopped
