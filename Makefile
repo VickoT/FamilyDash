@@ -8,8 +8,8 @@ DASH_CTX     = .
 SCHED_CTX    = .
 
 # Pi deploy (ssh alias eller user@host) UPPDATERA!
-PI_HOST      = pi@<pi-ip-eller-hostname>
-PI_DIR       = ~/$(PROJECT)               # var compose-filen ligger på Pi
+PI_HOST      = dashpi
+PI_DIR       = ~/Projects/$(PROJECT)               # var compose-filen ligger på Pi
 COMPOSE_FILE = docker-compose.yml         # prodfilen
 ENV_FILE     = .env                       # finns på Pi (inte i git)
 
