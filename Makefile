@@ -55,3 +55,7 @@ restart-pi:
 
 kiosk:
 	ssh $(PI_HOST) "tmux kill-session -t kiosk 2>/dev/null || true; tmux new -d -s kiosk 'chromium-browser --kiosk http://localhost:8050'"
+
+clean_cache:
+	find . -name "__pycache__" -type d -exec rm -r {} +
+
