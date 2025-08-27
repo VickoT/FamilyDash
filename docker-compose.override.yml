@@ -1,22 +1,51 @@
-# Docker Compose file for development environment - on Mac
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports: ["1883:1883"]
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    environment:
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+
+  # Överväg att lägga koden i en undermapp som "dash" för bättre struktur
+  # desamma för scheduler
   dash:
-    # Överväg att lägga koden i en undermapp som "dash" för bättre struktur
     build:
       context: .
-      # Döp om Dockerfile om du har en specifik för dash
       dockerfile: Dockerfile
-
+    container_name: familydash
+    restart: unless-stopped
+    ports: ["8050:8050"]        # bara för Mac-test
     volumes:
-      - ./:/app          # Om undermapp, ändra till ./dash:/app
+      - ./:/app
       - ./data:/app/data
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      MQTT_USER: ${MQTT_USER:-vicko}
+      MQTT_PASS: ${MQTT_PASS:-changeme}
+    depends_on:
+      - mosquitto
 
   scheduler:
-    # Överväg att lägga koden i en undermapp som "scheduler" för bättre struktur
     build:
       context: .
       dockerfile: Dockerfile.scheduler
+    container_name: scheduler
+    restart: unless-stopped
     volumes:
-      - .:/app         # Om undermapp, ändra till ./scheduler:/app
+      - .:/app
       - ./data:/app/data
       - ./.config:/app/.config:ro
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+      MQTT_USER: ${MQTT_USER:-vicko}
+      MQTT_PASS: ${MQTT_PASS:-changeme}
+    depends_on:
+      - mosquitto
