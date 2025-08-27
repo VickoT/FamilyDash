@@ -7,7 +7,7 @@ services:
     env_file: .env
     restart: unless-stopped
     volumes:
-      - ./data:/app/data:ro
+      - ./data:/app/data
 
   scheduler:
     image: ghcr.io/vickot/familydash-scheduler:latest
@@ -16,4 +16,5 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data
+      - ./cron:/app/cron
       - ./.config:/app/.config:ro

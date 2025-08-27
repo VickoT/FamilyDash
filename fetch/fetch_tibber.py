@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PRICES_FILE = DATA_DIR / "tibber_prices.csv"
-LOG_FILE = DATA_DIR / "fetch_tibber.log"
+LOG_FILE = DATA_DIR / "logs/fetch_tibber.log"
 
 load_dotenv()
 TIBBER_TOKEN = os.getenv("TIBBER_TOKEN")
