@@ -20,15 +20,18 @@ SCHED_IMG    = $(REGISTRY)/$(PROJECT)-scheduler:latest
 # -------- Targets --------
 # .PHONY markerar att dessa targets inte är filer utan "alias"/kommandon.
 # Utan .PHONY kan make tro att target redan är färdigt om en fil med samma namn råkar finnas.
-.PHONY: push-dash push-scheduler push-all logs deploy-pi pull-pi up-pi restart-pi
+.PHONY: push-dash push-scheduler push-all logs deploy-pi pull-pi up-pi restart-pi kiosk
 
 ## Bygg & pusha Dash (från lokal kod) till GHCR
 push-dash:
-	docker buildx build --platform $(PLATFORM) -t $(DASH_IMG) $(DASH_CTX) --push
+	docker buildx build --platform $(PLATFORM) \
+		-t $(DASH_IMG) $(DASH_CTX) --push
 
 ## Bygg & pusha Scheduler (från lokal kod) till GHCR
 push-scheduler:
-	docker buildx build --platform $(PLATFORM) -t $(SCHED_IMG) $(SCHED_CTX) --push
+	docker buildx build --platform $(PLATFORM) \
+		-f Dockerfile.scheduler \
+		-t $(SCHED_IMG) $(SCHED_CTX) --push
 
 ## Pusha båda
 push-all: push-dash push-scheduler
@@ -49,3 +52,6 @@ up-pi:
 ## Snabb omstart på Pi (utan pull)
 restart-pi:
 	ssh $(PI_HOST) "cd $(PI_DIR) && docker compose -f $(COMPOSE_FILE) up -d"
+
+kiosk:
+	ssh $(PI_HOST) "tmux kill-session -t kiosk 2>/dev/null || true; tmux new -d -s kiosk 'chromium-browser --kiosk http://localhost:8050'"

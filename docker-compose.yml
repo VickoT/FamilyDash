@@ -16,5 +16,4 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data
-      - ./cron:/app/cron
       - ./.config:/app/.config:ro
