@@ -12,10 +12,13 @@ services:
       - ./:/app
       - ./data:/app/data
     environment:
-      MQTT_HOST: 192.168.50.147
+      MQTT_HOST: 192.168.50.147 # dashpi
       MQTT_PORT: "1883"
+      MQTT_CLIENT: familydash-mac
       MQTT_USER: vicko
       MQTT_PASS: verysecure123
+      SHELLY_PREFIX: shelly-htg3     # <-- viktigt
+      LOCAL_TZ: Europe/Stockholm
 
   scheduler:
     build:
@@ -28,7 +31,10 @@ services:
       - ./data:/app/data
       - ./.config:/app/.config:ro
     environment:
-      MQTT_HOST: 192.168.50.147
+      MQTT_HOST: 192.168.50.147 # dashpi
       MQTT_PORT: "1883"
+      MQTT_CLIENT: familydash-mac
       MQTT_USER: vicko
       MQTT_PASS: verysecure123
+      SHELLY_PREFIX: shelly-htg3     # <-- viktigt
+      LOCAL_TZ: Europe/Stockholm

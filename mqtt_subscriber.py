@@ -4,9 +4,10 @@ from paho.mqtt.client import Client
 
 MQTT_HOST = os.getenv("MQTT_HOST", "192.168.50.147")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_CLIENT = os.getenv("MQTT_CLIENT", "familydash-default")
 MQTT_USER = os.getenv("MQTT_USER", "vicko")
 MQTT_PASS = os.getenv("MQTT_PASS", "verysecure123")
-SHELLY_PREFIX = os.getenv("SHELLY_PREFIX", "shellyhtg3-e4b323310e10")
+SHELLY_PREFIX = os.getenv("SHELLY_PREFIX", "shelly-htg3")
 
 _latest = {"shelly": {"tC": None, "rh": None, "ts": None}}
 _lock = threading.Lock()
@@ -53,7 +54,7 @@ def start():
     if getattr(start, "_started", False): return
     start._started = True
     def _run():
-        cli = Client(client_id="familydash-shelly")
+        cli = Client(client_id=MQTT_CLIENT)
         if MQTT_USER: cli.username_pw_set(MQTT_USER, MQTT_PASS)
         cli.on_connect = _on_connect
         cli.on_message = _on_message

@@ -95,6 +95,7 @@ def refresh_shelly(_n, last_ts):
     t = s.get("tC"); h = s.get("rh")
     ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
     view = html.Div([
+        html.Div("Soveværelse"),
         html.Div(f"Temp: {t:.1f} °C" if isinstance(t, (int, float)) else "Temp: –"),
         html.Div(f"Fukt: {h:.1f} %" if isinstance(h, (int, float)) else "Fukt: –"),
         html.Div(f"Tid: {ts_str}"),
