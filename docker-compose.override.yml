@@ -1,17 +1,4 @@
 services:
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: mosquitto
-    restart: unless-stopped
-    ports: ["1883:1883"]
-    volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
-    environment:
-      MQTT_USER: ${MQTT_USER}
-      MQTT_PASS: ${MQTT_PASS}
-
   # Överväg att lägga koden i en undermapp som "dash" för bättre struktur
   # desamma för scheduler
   dash:
@@ -25,12 +12,10 @@ services:
       - ./:/app
       - ./data:/app/data
     environment:
-      MQTT_HOST: mosquitto
+      MQTT_HOST: 192.168.50.147
       MQTT_PORT: "1883"
-      MQTT_USER: ${MQTT_USER:-vicko}
-      MQTT_PASS: ${MQTT_PASS:-changeme}
-    depends_on:
-      - mosquitto
+      MQTT_USER: vicko
+      MQTT_PASS: verysecure123
 
   scheduler:
     build:
@@ -43,9 +28,7 @@ services:
       - ./data:/app/data
       - ./.config:/app/.config:ro
     environment:
-      MQTT_HOST: mosquitto
+      MQTT_HOST: 192.168.50.147
       MQTT_PORT: "1883"
-      MQTT_USER: ${MQTT_USER:-vicko}
-      MQTT_PASS: ${MQTT_PASS:-changeme}
-    depends_on:
-      - mosquitto
+      MQTT_USER: vicko
+      MQTT_PASS: verysecure123
