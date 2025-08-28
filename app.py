@@ -36,7 +36,7 @@ app.layout = html.Div(
             children=[
                 washer_box(),
                 html.Div(id="shelly-box", className="tile"),
-                html.Div(id="sonos-box", className="tile"),
+                html.Div(id="washertime-box", className="tile"),
                 html.Div(id="sensor3-box", className="tile"),
                 html.Div(id="sensor4-box", className="tile"),
                 html.Div(id="sensor5-box", className="tile"),
@@ -58,7 +58,8 @@ app.layout = html.Div(
         ),
 
         dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0),
-        dcc.Store(id="last-ts-map", data={}),
+        dcc.Store(id="last-ts-shelly", data={}),
+        dcc.Store(id="last-ts-washer", data={}),
         dcc.Interval(id="tick", interval=5000, n_intervals=0),
     ],
 )
@@ -80,9 +81,9 @@ def cb_tibber(_): return make_tibber_figure()
 # ---- Shelly callback ----
 @app.callback(
     [Output("shelly-box", "children"),
-     Output("last-ts-map", "data")],
+     Output("last-ts-shelly", "data")],
     Input("tick", "n_intervals"),
-    State("last-ts-map", "data"),
+    State("last-ts-shelly", "data"),
 )
 def refresh_shelly(_n, last_ts):
     snap = get_snapshot()
@@ -102,6 +103,46 @@ def refresh_shelly(_n, last_ts):
     ])
     last_ts["shelly"] = ts
     return view, last_ts
+
+# ---- Washer time callback ----
+@app.callback(
+    [Output("washertime-box", "children"),
+     Output("washertime-box", "className"),
+     Output("last-ts-washer", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-washer", "data"),
+)
+def refresh_washertime(_n, last_ts):
+    snap = get_snapshot()
+    last_ts = last_ts or {}
+    w = snap.get("washer", {})
+    ts = w.get("ts")
+
+    # If we have no data yet, render a friendly placeholder
+    if not ts:
+        return html.Div([
+            html.Div("Tvättmaskin"),
+            html.Div("Väntar på data …")
+        ]), "tile", last_ts
+
+    # Avoid re-rendering if nothing changed
+    if last_ts.get("washer") == ts:
+        return no_update, no_update, last_ts
+
+    minutes = w.get("time_to_end")
+    running = isinstance(minutes, (int, float)) and minutes > 0
+    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc)\
+                     .astimezone(LOCAL_TZ).strftime("%H:%M:%S")
+
+    view = html.Div([
+        html.Div("Tvättmaskin"),
+        html.Div(f"Tid kvar: {minutes:.0f} min" if running else "Inte igång"),
+        html.Div(f"Senast: {ts_str}"),
+    ])
+    box_class = "tile active" if running else "tile"
+
+    last_ts["washer"] = ts
+    return view, box_class, last_ts
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
