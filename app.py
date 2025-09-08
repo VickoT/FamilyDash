@@ -1,5 +1,5 @@
 from dash import Dash, html, dcc, no_update
-from dash.dependencies import Input, Output, State   # <-- +State
+from dash.dependencies import Input, Output, State
 
 from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
@@ -8,40 +8,43 @@ from components.washer_box import washer_box, washer_render
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
 
-# ---- MQTT helper ----
+# --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-import os
+import os, time
 
 LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
 
+# Initiala fetch (best effort)
 try:
     fetch_tibber.main(); fetch_calendar.main(); fetch_weather.main(); fetch_washer.main()
 except Exception as e:
     print(f"Initial fetch failed: {e}")
 
 app = Dash(__name__)
-mqtt_start()   # starta subscribern i bakgrunden
+mqtt_start()   # starta MQTT-subscribe i bakgrunden
 
 app.layout = html.Div(
     className="app-wrapper",
     children=[
         html.Div(id="calendar-box", className="calendar box", children=calendar_box()),
-        html.Div(id="weather-box", className="weather box", children="Weather placeholder"),
+        html.Div(id="weather-box",  className="weather box",  children="Weather placeholder"),
 
         html.Div(
             id="widgets-box",
             className="widgets box",
             children=[
-                washer_box(),
-                html.Div(id="shelly-box", className="tile"),
-                html.Div(id="washertime-box", className="tile"),
-                html.Div(id="sensor3-box", className="tile"),
-                html.Div(id="sensor4-box", className="tile"),
-                html.Div(id="sensor5-box", className="tile"),
-                html.Div(id="sensor6-box", className="tile"),
-                html.Div(id="sensor7-box", className="tile"),
+                washer_box(),                         # befintlig tvättmaskinskomponent
+                html.Div(id="dryer-box",     className="tile"),    # <-- NY: torktumlare
+                html.Div(id="shelly-box",    className="tile"),
+                html.Div(id="washertime-box",className="tile"),
+                html.Div(id="heartbeat-box", className="tile"),
+                html.Div(id="sensor3-box",   className="tile"),
+                html.Div(id="sensor4-box",   className="tile"),
+                html.Div(id="sensor5-box",   className="tile"),
+                html.Div(id="sensor6-box",   className="tile"),
+                html.Div(id="sensor7-box",   className="tile"),
             ],
         ),
 
@@ -57,28 +60,34 @@ app.layout = html.Div(
             ),
         ),
 
+        # Intervaller & state
         dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0),
+        dcc.Interval(id="tick", interval=5000, n_intervals=0),
         dcc.Store(id="last-ts-shelly", data={}),
         dcc.Store(id="last-ts-washer", data={}),
-        dcc.Interval(id="tick", interval=5000, n_intervals=0),
+        dcc.Store(id="last-ts-dryer",  data={}),   # <-- NY
     ],
 )
 
 # ---------- Callbacks ----------
 @app.callback(Output("calendar-box", "children"), Input("interval-component", "n_intervals"))
-def cb_calendar(_): return calendar_box()
+def cb_calendar(_):
+    return calendar_box()
 
 @app.callback(Output("weather-box", "children"), Input("interval-component", "n_intervals"))
-def cb_weather(_): return weather_box()
+def cb_weather(_):
+    return weather_box()
 
 @app.callback([Output("washer-box", "children"), Output("washer-box", "className")],
               Input("interval-component", "n_intervals"))
-def cb_washer(_): return washer_render()
+def cb_washer(_):
+    return washer_render()
 
 @app.callback(Output("tibber-graph", "figure"), Input("interval-component", "n_intervals"))
-def cb_tibber(_): return make_tibber_figure()
+def cb_tibber(_):
+    return make_tibber_figure()
 
-# ---- Shelly callback ----
+# ---- Shelly (Sovrum) ----------------------------------------------------
 @app.callback(
     [Output("shelly-box", "children"),
      Output("last-ts-shelly", "data")],
@@ -88,9 +97,13 @@ def cb_tibber(_): return make_tibber_figure()
 def refresh_shelly(_n, last_ts):
     snap = get_snapshot()
     last_ts = last_ts or {}
-    s = snap.get("shelly", {})
+    s = snap.get("shelly") or {}
     ts = s.get("ts")
-    if not ts or last_ts.get("shelly") == ts:
+
+    if not ts:
+        return html.Div([html.Div("Soveværelse"), html.Div("Väntar på sensor …")]), last_ts
+
+    if last_ts.get("shelly") == ts:
         return no_update, last_ts
 
     t = s.get("tC"); h = s.get("rh")
@@ -104,7 +117,7 @@ def refresh_shelly(_n, last_ts):
     last_ts["shelly"] = ts
     return view, last_ts
 
-# ---- Washer time callback ----
+# ---- Tvättmaskin: enkel tid-tile ----------------------------------------
 @app.callback(
     [Output("washertime-box", "children"),
      Output("washertime-box", "className"),
@@ -118,31 +131,84 @@ def refresh_washertime(_n, last_ts):
     w = snap.get("washer", {})
     ts = w.get("ts")
 
-    # If we have no data yet, render a friendly placeholder
     if not ts:
-        return html.Div([
-            html.Div("Tvättmaskin"),
-            html.Div("Väntar på data …")
-        ]), "tile", last_ts
+        return html.Div([html.Div("Tvättmaskin"), html.Div("Väntar på data …")]), "tile", last_ts
 
-    # Avoid re-rendering if nothing changed
     if last_ts.get("washer") == ts:
         return no_update, no_update, last_ts
 
-    minutes = w.get("time_to_end")
+    minutes = w.get("time_to_end_min")
     running = isinstance(minutes, (int, float)) and minutes > 0
-    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc)\
-                     .astimezone(LOCAL_TZ).strftime("%H:%M:%S")
+    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
 
     view = html.Div([
         html.Div("Tvättmaskin"),
-        html.Div(f"Tid kvar: {minutes:.0f} min" if running else "Inte igång"),
+        html.Div(f"Tid kvar: {int(minutes)} min" if running else "Inte igång"),
         html.Div(f"Senast: {ts_str}"),
     ])
     box_class = "tile active" if running else "tile"
 
     last_ts["washer"] = ts
     return view, box_class, last_ts
+
+# ---- Torktumlare: ny tile -----------------------------------------------
+@app.callback(
+    [Output("dryer-box", "children"),
+     Output("dryer-box", "className"),
+     Output("last-ts-dryer", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-dryer", "data"),
+)
+def refresh_dryer(_n, last_ts):
+    snap = get_snapshot()
+    last_ts = last_ts or {}
+    d = snap.get("dryer", {}) or {}
+    ts = d.get("ts")
+
+    if not ts:
+        return html.Div([html.Div("Torktumlare"), html.Div("Väntar på data …")]), "tile", last_ts
+
+    if last_ts.get("dryer") == ts:
+        return no_update, no_update, last_ts
+
+    mins = d.get("time_left")
+    status = (d.get("status") or "").lower()
+    running = isinstance(mins, (int, float)) and mins > 0 and status not in ("none", "stopped", "stop", "idle", "unknown")
+
+    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
+    view = html.Div([
+        html.Div("Torktumlare"),
+        html.Div(f"Status: {status or 'okänd'}"),
+        html.Div(f"Tid kvar: {int(mins)} min" if running else "Inte igång"),
+        html.Div(f"Senast: {ts_str}"),
+    ])
+    box_class = "tile active" if running else "tile"
+
+    last_ts["dryer"] = ts
+    return view, box_class, last_ts
+
+# ---- Heartbeat ----------------------------------------------------------
+@app.callback(
+    Output("heartbeat-box", "children"),
+    Input("tick", "n_intervals"),
+)
+def refresh_heartbeat(_n):
+    snap = get_snapshot()
+    hb = snap.get("heartbeat", {})
+    ts = hb.get("ts")
+
+    if not ts:
+        return html.Div([html.Div("Heartbeat"), html.Div("Väntar …")])
+
+    age = time.time() - ts
+    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
+    status = "OK" if age <= 30 else f"Ingen puls på {int(age)}s"
+
+    return html.Div([
+        html.Div("Heartbeat"),
+        html.Div(f"Senast: {ts_str}"),
+        html.Div(f"Status: {status}"),
+    ])
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
