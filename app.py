@@ -5,6 +5,7 @@ from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
 from components.washer_box import box as washer_box, compute as washer_compute
+from components.dryer_box import compute as dryer_compute
 
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
@@ -129,33 +130,8 @@ def refresh_shelly(_n, last_ts):
     Input("tick", "n_intervals"),
     State("last-ts-dryer", "data"),
 )
-def refresh_dryer(_n, last_ts):
-    snap = get_snapshot()
-    last_ts = last_ts or {}
-    d = snap.get("dryer", {}) or {}
-    ts = d.get("ts")
-
-    if not ts:
-        return html.Div([html.Div("Torktumlare"), html.Div("Väntar på data …")]), "tile", last_ts
-
-    if last_ts.get("dryer") == ts:
-        return no_update, no_update, last_ts
-
-    mins = d.get("time_left")
-    status = (d.get("status") or "").lower()
-    running = isinstance(mins, (int, float)) and mins > 0 and status not in ("none", "stopped", "stop", "idle", "unknown")
-
-    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
-    view = html.Div([
-        html.Div("Torktumlare"),
-        html.Div(f"Status: {status or 'okänd'}"),
-        html.Div(f"Tid kvar: {int(mins)} min" if running else "Inte igång"),
-        html.Div(f"Senast: {ts_str}"),
-    ])
-    box_class = "tile active" if running else "tile"
-
-    last_ts["dryer"] = ts
-    return view, box_class, last_ts
+def cb_dryer(_n, last_ts):
+    return dryer_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 # ---- Heartbeat ----------------------------------------------------------
 @app.callback(

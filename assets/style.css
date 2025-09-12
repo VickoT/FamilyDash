@@ -245,6 +245,65 @@ html, body{
   color: #000; /* följer textfärg (vit → grön) */
 }
 
+
+/* --- Dryer: basstil samma som washer --- */
+#dryer-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  color:var(--fg-text);
+
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+
+/* Aktivt läge → grön bakgrund + glow (som washer) */
+#dryer-box.active {
+  background:#39ff14;
+  color:#000;
+  box-shadow:0 0 16px #39ff14;
+}
+
+/* Stor tidsrad när aktiv, som washer */
+#dryer-box.active .value{
+  font-size: 2rem;
+  color:#000;
+  line-height:1;
+  margin-top:0;
+}
+
+/* SVG-storlek och färg */
+.dryer-svg{
+  width:84px;
+  height:84px;
+  display:block;
+  color:#000; /* följer textfärg (vit → grön) */
+}
+
+/* Dölj värmevågor när inaktiv */
+#dryer-box .dryer-svg .heat{ display:none; }
+
+/* Fläkt snurr + värmevågor när aktiv (valfritt) */
+@keyframes fan-spin { to { transform: rotate(360deg); } }
+#dryer-box.active .dryer-svg .fan{
+  animation: fan-spin 1.4s linear infinite;
+  will-change: transform;
+}
+
+@keyframes heat-wave {
+  0% { transform: translateY(0); opacity:.3; }
+  50%{ transform: translateY(-2px); opacity:.8; }
+  100%{ transform: translateY(0); opacity:.3; }
+}
+#dryer-box.active .dryer-svg .heat{ display:inline; opacity:.6; }
+#dryer-box.active .dryer-svg .heat path:nth-child(1){ animation: heat-wave 1.6s ease-in-out infinite; }
+#dryer-box.active .dryer-svg .heat path:nth-child(2){ animation: heat-wave 1.6s ease-in-out .2s infinite; }
+#dryer-box.active .dryer-svg .heat path:nth-child(3){ animation: heat-wave 1.6s ease-in-out .4s infinite; }
+
 /**********************************************************
  * 7) Tibber
  **********************************************************/
