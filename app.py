@@ -4,7 +4,8 @@ from dash.dependencies import Input, Output, State
 from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
-from components.washer_box import washer_box, washer_render
+from components.washer_box import box as washer_box, compute as washer_compute
+
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
 
@@ -43,8 +44,6 @@ app.layout = html.Div(
                 html.Div(id="sensor3-box",   className="tile"),
                 html.Div(id="sensor4-box",   className="tile"),
                 html.Div(id="sensor5-box",   className="tile"),
-                html.Div(id="sensor6-box",   className="tile"),
-                html.Div(id="sensor7-box",   className="tile"),
             ],
         ),
 
@@ -78,10 +77,15 @@ def cb_calendar(_):
 def cb_weather(_):
     return weather_box()
 
-@app.callback([Output("washer-box", "children"), Output("washer-box", "className")],
-              Input("interval-component", "n_intervals"))
-def cb_washer(_):
-    return washer_render()
+@app.callback(
+    [Output("washer-box", "children"),
+     Output("washer-box", "className"),
+     Output("last-ts-washer", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-washer", "data"),
+)
+def cb_washer(_n, last_ts):
+    return washer_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 @app.callback(Output("tibber-graph", "figure"), Input("interval-component", "n_intervals"))
 def cb_tibber(_):
@@ -116,40 +120,6 @@ def refresh_shelly(_n, last_ts):
     ])
     last_ts["shelly"] = ts
     return view, last_ts
-
-# ---- Tvättmaskin: enkel tid-tile ----------------------------------------
-@app.callback(
-    [Output("washertime-box", "children"),
-     Output("washertime-box", "className"),
-     Output("last-ts-washer", "data")],
-    Input("tick", "n_intervals"),
-    State("last-ts-washer", "data"),
-)
-def refresh_washertime(_n, last_ts):
-    snap = get_snapshot()
-    last_ts = last_ts or {}
-    w = snap.get("washer", {})
-    ts = w.get("ts")
-
-    if not ts:
-        return html.Div([html.Div("Tvättmaskin"), html.Div("Väntar på data …")]), "tile", last_ts
-
-    if last_ts.get("washer") == ts:
-        return no_update, no_update, last_ts
-
-    minutes = w.get("time_to_end_min")
-    running = isinstance(minutes, (int, float)) and minutes > 0
-    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
-
-    view = html.Div([
-        html.Div("Tvättmaskin"),
-        html.Div(f"Tid kvar: {int(minutes)} min" if running else "Inte igång"),
-        html.Div(f"Senast: {ts_str}"),
-    ])
-    box_class = "tile active" if running else "tile"
-
-    last_ts["washer"] = ts
-    return view, box_class, last_ts
 
 # ---- Torktumlare: ny tile -----------------------------------------------
 @app.callback(

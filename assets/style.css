@@ -223,6 +223,14 @@ html, body{
   box-shadow:0 0 16px #39ff14;
 }
 
+/* Specifikt för tvättmaskinen i aktivt läge */
+#washer-box.active .value {
+  font-size: 2rem;   /* gör tiden större */
+  color: #000;       /* svart text */
+  line-height: 1;  /* lite mer luft */
+  margin-top: 0; /* justera visuellt */
+}
+
 /* Snurr-animation */
 @keyframes washer-spin { to { transform: rotate(360deg); } }
 #washer-box.active .washer-svg .door {

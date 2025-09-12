@@ -1,10 +1,8 @@
 # components/washer_box.py
-import os, math, pandas as pd
-from dash import html, dcc
-from datetime import datetime
+from dash import html, dcc, no_update
+from datetime import datetime, timezone
 
-CSV_PATH = os.getenv("WASHER_FILE", "data/washer_w.csv")
-
+# Samma SVG som du redan använder
 SVG_STRING = r"""
 <svg class="washer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <g class="frame" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -25,36 +23,86 @@ SVG_STRING = r"""
 </svg>
 """
 
-def _read_washer():
-    """Read last power value and timestamp from CSV."""
-    w = float("nan"); ts_fmt = ""
-    try:
-        df = pd.read_csv(CSV_PATH, names=["ts", "W"])
-        latest = df.iloc[-1]
-        w = float(latest["W"])
-        ts = str(latest["ts"])
-        try:
-            dt = datetime.fromisoformat(ts)
-            ts_fmt = dt.strftime("%Y-%m-%d, %H:%M")
-        except Exception:
-            ts_fmt = ts
-    except Exception as e:
-        print(f"[washer_box] failed to read {CSV_PATH}: {e}")
-    return w, ts_fmt
+# ---- Publikt API ---------------------------------------------------------
+def box():
+    """Wrapper för layouten."""
+    # Starta med neutral tile tills första MQTT kommer
+    children, klass = _placeholder_children(), "box washer-card"
+    return html.Div(id="washer-box", className=klass, children=children)
 
-def washer_render():
-    """Return children and classes for the washer box (only icon + timestamp)."""
-    w, ts_fmt = _read_washer()
-    active = (not math.isnan(w) and w > 0.0)
+def compute(snapshot: dict | None, tz, last_ts: dict | None):
+    """
+    Server-side de-dupe och render:
+      snapshot: dict med snapshot["washer"] = {"ts": <epoch>, "time_to_end_min": <int|float>}
+      tz:       ZoneInfo (Europe/Stockholm)
+      last_ts:  dcc.Store-data
+    Returnerar (children | no_update, className | no_update, updated_last_ts)
+    """
+    last_ts = (last_ts or {}).copy()
+    w = (snapshot or {}).get("washer") or {}
+    ts = w.get("ts")
 
-    classes = "box washer-card" + (" active" if active else "")
+    # 1) Ingen data ännu → placeholder
+    if not ts:
+        return _placeholder_children(), "box washer-card", last_ts
 
-    children = [
+    # 2) De-dupe: samma ts som senast → inga DOM-uppdateringar
+    if last_ts.get("washer") == ts:
+        return no_update, no_update, last_ts
+
+    # 3) Ny data → rendera och spara ts
+    children, klass = _render(w, tz)
+    last_ts["washer"] = ts
+    return children, klass, last_ts
+
+# ---- Interna helpers -----------------------------------------------------
+def _placeholder_children():
+    return [
         dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
-        html.Div(ts_fmt, className="time"),
+        html.Div("Venter på data …", className="time"),  # dansk
     ]
-    return children, classes
 
-def washer_box():
-    children, classes = washer_render()
-    return html.Div(children=children, className=classes, id="washer-box")
+def _render(w: dict, tz):
+    minutes = w.get("time_to_end_min")
+    try:
+        minutes = int(minutes)
+    except (TypeError, ValueError):
+        minutes = 0
+
+    running = minutes > 0
+    ts = w.get("ts")
+
+    if running:
+        # Aktiv → visa bara tid kvar
+        children = [
+            dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
+            html.Div(f"{_fmt_hhmm(minutes)}", className="value"),
+        ]
+        klass = "box washer-card active"
+    else:
+        # Inaktiv → visa bara ts
+        ts_str = _fmt_dt(ts, tz) if ts else "–"
+        children = [
+            dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
+            html.Div(ts_str, className="time"),
+        ]
+        klass = "box washer-card"
+
+    return children, klass
+
+def _fmt_dt(ts, tz):
+    try:
+        from datetime import datetime, timezone
+        return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(tz).strftime("%Y-%m-%d, %H:%M")
+    except Exception:
+        return "–"
+
+def _fmt_hhmm(total_min):
+    try:
+        m = int(total_min)
+    except (TypeError, ValueError):
+        return "–"
+    if m < 0:
+        m = 0
+    h, mm = divmod(m, 60)
+    return f"{h:02d}:{mm:02d}"
