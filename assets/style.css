@@ -34,8 +34,7 @@ html, body{
 *::after { box-sizing: border-box; }
 
 /**********************************************************
- * 2) Top-level grid (kalender | väder + widgets ovanför,
- *                    tibber under; kalender spänner alla rader)
+ * 2) Top-level grid
  **********************************************************/
 .app-wrapper{
   width: 1280px;
@@ -43,13 +42,9 @@ html, body{
   padding: 5px;
 
   display: grid;
-  /* 3 kolumner: kalender | väder | widgets */
   grid-template-columns: 1fr 1fr 2fr;
-  /* Rad 1 = auto (höjd efter innehåll), Rad 2 = fyll resterande (tibber) */
   grid-template-rows: auto 1fr;
   gap: var(--gap);
-
-  /* Gör stretch till standard så alla boxar fyller sina gridytor */
   place-items: stretch stretch;
 }
 
@@ -73,25 +68,15 @@ html, body{
 /**********************************************************
  * 4) Kalenderkolumn
  **********************************************************/
-/**********************************************************
- * 4) Kalenderkolumn — fyll 100% av höjden, ingen scroll.
- *    Dagar delar på höjden men kan växa/krympa efter behov.
- **********************************************************/
-
 #calendar-box{
   display: flex;
   flex-direction: column;
   gap: var(--gap);
-  height: 100%;     /* täck hela radhöjden */
-  min-height: 0;    /* viktigt i grid-kontekst */
-  overflow: visible;/* ingen skroll här */
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
 }
 
-/* Dagkort: baseras på innehåll, men delar på utrymmet.
-   - flex-grow: 1  → alla deltar i att fylla höjden
-   - flex-shrink: 1→ kan krympa när någon annan behöver mer
-   - flex-basis: auto → innehållet påverkar "baseline"
-*/
 .day{
   background: var(--bg-day);
   border: 1px solid var(--border-day);
@@ -103,9 +88,9 @@ html, body{
   flex-direction: column;
   align-items: flex-start;
 
-  flex: 1 1 auto;   /* 🡐 nyckeln: väx/krymp efter behov */
-  min-height: 34px; /* bottengräns så de aldrig blir för tunna */
-  overflow: hidden; /* klipp absolut spill (ingen intern scroll) */
+  flex: 1 1 auto;
+  min-height: 34px;
+  overflow: hidden;
 }
 
 .day.today{
@@ -113,7 +98,6 @@ html, body{
   border-color: var(--border-day-today);
 }
 
-/* Rubriken som förr */
 .day-label,
 .day-title{
   text-decoration: underline;
@@ -124,11 +108,9 @@ html, body{
   flex: 0 0 auto;
 }
 
-/* Söndag röd – robust */
 .day .day-title.sunday,
 .day .day-label.sunday{ color: var(--fg-sunday) !important; }
 
-/* Listan får ta plats men får också krympa när andra dagar behöver utrymme */
 .events,
 .day-content{
   margin: 6px 0 0;
@@ -138,17 +120,16 @@ html, body{
   font-size: 1.3rem;
   font-weight: 600;
 
-  flex: 1 1 auto;   /* 🡐 låt listan vara elastisk */
-  min-height: 0;    /* krävs i flex-kolumner för att få krympa */
-  overflow: hidden; /* ingen intern scroll, text wrappar */
-  text-wrap: pretty;/* snygg radbrytning där det går */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  text-wrap: pretty;
 }
 
-/* Sista dagkortet: ingen extra glapp i botten */
 #calendar-box .day:last-child{ margin-bottom: 0; }
 
 /**********************************************************
- * 5) Väder (layout-hjälpare, själva innehållet i komponent)
+ * 5) Väder
  **********************************************************/
 .weather-card { display:flex; flex-direction:column; gap:8px;
     background:var(--bg-card); padding: 10px; margin: 5px;}
@@ -162,7 +143,6 @@ html, body{
 .wx-stats li  { display:flex; justify-content:space-between; margin:2px 0; }
 .wx-ts        { font-size:.8rem; opacity:.6; margin-top:6px; }
 
-/* UV färger */
 .uv{ font-weight:600; }
 .uv-low{ color:#2e7d32; }
 .uv-medium{ color:#f9a825; }
@@ -192,11 +172,12 @@ html, body{
   min-height:0;
 }
 
-/* Frivilliga spans för större widgets */
 .tile.span-2c { grid-column: span 2; }
 .tile.span-2r { grid-row: span 2; }
 
-/* Tvättmaskinsruta */
+/**********************************************************
+ * 6a) Washer
+ **********************************************************/
 #washer-box{
   display:flex;
   flex-direction:column;
@@ -211,27 +192,21 @@ html, body{
   transition: background .15s, color .15s, box-shadow .15s;
 }
 
-#washer-box .time {
-  font-size:.8rem;
-  color:#aaa;
-}
+#washer-box .time { font-size:.8rem; color:#aaa; }
 
-/* Aktivt läge → grön bakgrund + glow */
 #washer-box.active {
   background:#39ff14;
   color:#000;
   box-shadow:0 0 16px #39ff14;
 }
 
-/* Specifikt för tvättmaskinen i aktivt läge */
 #washer-box.active .value {
-  font-size: 2rem;   /* gör tiden större */
-  color: #000;       /* svart text */
-  line-height: 1;  /* lite mer luft */
-  margin-top: 0; /* justera visuellt */
+  font-size: 2rem;
+  color: #000;
+  line-height: 1;
+  margin-top: 0;
 }
 
-/* Snurr-animation */
 @keyframes washer-spin { to { transform: rotate(360deg); } }
 #washer-box.active .washer-svg .door {
   animation: washer-spin 1.6s linear infinite;
@@ -242,67 +217,59 @@ html, body{
   width:84px;
   height:84px;
   display:block;
-  color: #000; /* följer textfärg (vit → grön) */
+  color:#000;
 }
 
+/**********************************************************
+ * 6b) Dryer – samma mönster som washer (klass-baserat)
+ **********************************************************/
+/* Ta bort p-marginaler som Markdown kan lägga in */
+.dryer-card .dash-markdown > * { margin: 0; }
 
-/* --- Dryer: basstil samma som washer --- */
-#dryer-box{
+.dryer-card{
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  color: var(--fg-text);
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   gap:6px;
-
-  background:var(--bg-card);
-  border-radius:var(--radius-lg);
-  color:var(--fg-text);
-
   transition: background .15s, color .15s, box-shadow .15s;
 }
 
-/* Aktivt läge → grön bakgrund + glow (som washer) */
-#dryer-box.active {
-  background:#39ff14;
+.dryer-card .time { font-size:.8rem; color:#aaa; }
+
+/* Aktivt läge – välj färg: samma gröna som washer */
+.dryer-card.active{
+  background:#39ff14;     /* byt till #ffd24d om du vill särskilja */
   color:#000;
   box-shadow:0 0 16px #39ff14;
 }
 
-/* Stor tidsrad när aktiv, som washer */
-#dryer-box.active .value{
-  font-size: 2rem;
-  color:#000;
+/* Stor tidsrad när aktiv */
+.dryer-card.active .value{
+  font-size:2rem;
   line-height:1;
   margin-top:0;
+  color:#000;
 }
 
-/* SVG-storlek och färg */
-.dryer-svg{
+/* Ikonstorlek + färg (ärver currentColor inne i SVG) */
+.dryer-card .dryer-svg{
   width:84px;
   height:84px;
   display:block;
-  color:#000; /* följer textfärg (vit → grön) */
+  color: #000;
 }
+.dryer-card.active .dryer-svg{ color:#000; }
 
-/* Dölj värmevågor när inaktiv */
-#dryer-box .dryer-svg .heat{ display:none; }
-
-/* Fläkt snurr + värmevågor när aktiv (valfritt) */
-@keyframes fan-spin { to { transform: rotate(360deg); } }
-#dryer-box.active .dryer-svg .fan{
-  animation: fan-spin 1.4s linear infinite;
+/* (Valfritt) Snurra dörren som washer */
+@keyframes dryer-spin { to { transform: rotate(360deg); } }
+.dryer-card.active .dryer-svg .door{
+  animation: dryer-spin 1.6s linear infinite;
   will-change: transform;
 }
-
-@keyframes heat-wave {
-  0% { transform: translateY(0); opacity:.3; }
-  50%{ transform: translateY(-2px); opacity:.8; }
-  100%{ transform: translateY(0); opacity:.3; }
-}
-#dryer-box.active .dryer-svg .heat{ display:inline; opacity:.6; }
-#dryer-box.active .dryer-svg .heat path:nth-child(1){ animation: heat-wave 1.6s ease-in-out infinite; }
-#dryer-box.active .dryer-svg .heat path:nth-child(2){ animation: heat-wave 1.6s ease-in-out .2s infinite; }
-#dryer-box.active .dryer-svg .heat path:nth-child(3){ animation: heat-wave 1.6s ease-in-out .4s infinite; }
 
 /**********************************************************
  * 7) Tibber

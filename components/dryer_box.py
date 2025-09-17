@@ -1,65 +1,99 @@
 # components/dryer_box.py
-from dash import html, no_update
+from dash import html, dcc, no_update
 from datetime import datetime, timezone
 
+# Samma ikon som washer (klassnamn bytt till dryer-svg)
+SVG_STRING = r"""
+<svg class="dryer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g class="frame" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="7" width="54" height="50" rx="6"/>
+    <line x1="5" y1="19" x2="59" y2="19"/>
+  </g>
+  <g class="panel" fill="currentColor">
+    <circle class="panel-led" cx="14" cy="13" r="2.5"/>
+    <rect class="panel-display" x="40" y="10" width="15" height="6" rx="2" ry="2"
+          fill="none" stroke="currentColor" stroke-width="2"/>
+  </g>
+  <g class="door" style="transform-origin:32px 38px">
+    <circle cx="32" cy="38" r="14" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="32" cy="38" r="9"  fill="none" stroke="currentColor" stroke-width="3"/>
+    <path d="M22,38c3,-3 6,-3 10,0s7,3 10,0"
+          fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
+"""
+
 def compute(snapshot: dict | None, tz, last_ts: dict | None):
+    """
+    snapshot['dryer'] = {
+      'ts': <epoch>,
+      'time_left': <int|min>   # minuter kvar; >0 = aktiv
+      # (status kan finnas, men vi följer washer och tittar bara på time_left)
+    }
+    Returnerar (children|no_update, className|no_update, updated_last_ts)
+    """
     last_ts = (last_ts or {}).copy()
     d = (snapshot or {}).get("dryer") or {}
+    ts = d.get("ts")
 
-    # normaliser status
-    raw_status = d.get("status")
-    status = (raw_status or "").strip().lower()
+    # 1) Ingen data ännu → placeholder
+    if not ts:
+        return _placeholder_children(), "box dryer-card", last_ts
+
+    # 2) De-dupe: samma ts som senast → inga DOM-uppdateringar
+    if last_ts.get("dryer") == ts:
+        return no_update, no_update, last_ts
+
+    # 3) Ny data → rendera och spara ts
+    children, klass = _render(d, tz)
+    last_ts["dryer"] = ts
+    return children, klass, last_ts
+
+# ---- Interna helpers (samma upplägg som washer) -------------------------
+def _placeholder_children():
+    return [
+        dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
+        html.Div("Venter på data …", className="time"),
+    ]
+
+def _render(d: dict, tz):
     minutes = d.get("time_left")
     try:
         minutes = int(minutes)
     except (TypeError, ValueError):
-        minutes = None
+        minutes = 0
 
+    running = minutes > 0
     ts = d.get("ts")
-    fp = (ts, status, minutes)
 
-    if ts is None and last_ts.get("dryer_fp") is None:
-        return _placeholder(), "tile", last_ts
-
-    if last_ts.get("dryer_fp") == fp:
-        return no_update, no_update, last_ts
-
-    children, klass = _render(status, minutes, ts, tz)
-    last_ts["dryer_fp"] = fp
-    return children, klass, last_ts
-
-# ---------- intern render ----------
-
-def _render(status: str, minutes: int | None, ts, tz):
-    running = (status != "none")
-
-    if running and (isinstance(minutes, int) and minutes > 0):
-        time_line = html.Div(f"Tid tilbage: {_fmt_hhmm(minutes)}")
+    if running:
+        children = [
+            dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
+            html.Div(_fmt_hhmm(minutes), className="value"),
+        ]
+        klass = "box dryer-card active"
     else:
-        time_line = html.Div("Tid tilbage: –")
+        ts_str = _fmt_dt(ts, tz) if ts else "–"
+        children = [
+            dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
+            html.Div(ts_str, className="time"),
+        ]
+        klass = "box dryer-card"
 
-    ts_str = _fmt_ts(ts, tz) if ts is not None else "–"
+    return children, klass
 
-    view = html.Div([
-        html.Div("Tørretumbler"),
-        html.Div(f"Status: {status or 'ukendt'}"),
-        time_line,
-        html.Div(f"Senest: {ts_str}"),
-    ])
-    klass = "tile active" if running else "tile"
-    return view, klass
-
-def _placeholder():
-    return html.Div([html.Div("Tørretumbler"), html.Div("Venter på data …")])
-
-def _fmt_hhmm(total_min: int) -> str:
-    if total_min is None or total_min < 0:
-        return "00:00"
-    h, m = divmod(int(total_min), 60)
-    return f"{h:02d}:{m:02d}"
-
-def _fmt_ts(ts, tz):
+def _fmt_dt(ts, tz):
     try:
-        return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(tz).strftime("%H:%M:%S")
+        return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(tz).strftime("%Y-%m-%d, %H:%M")
     except Exception:
         return "–"
+
+def _fmt_hhmm(total_min):
+    try:
+        m = int(total_min)
+    except (TypeError, ValueError):
+        return "–"
+    if m < 0:
+        m = 0
+    h, mm = divmod(m, 60)
+    return f"{h:02d}:{mm:02d}"

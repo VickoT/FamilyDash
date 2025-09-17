@@ -38,11 +38,11 @@ app.layout = html.Div(
             className="widgets box",
             children=[
                 washer_box(),                         # befintlig tvättmaskinskomponent
-                html.Div(id="dryer-box",     className="tile"),    # <-- NY: torktumlare
+                html.Div(id="dryer-box", className="box dryer-card"),
                 html.Div(id="shelly-box",    className="tile"),
-                html.Div(id="washertime-box",className="tile"),
                 html.Div(id="heartbeat-box", className="tile"),
                 html.Div(id="sensor3-box",   className="tile"),
+                html.Div(id="washertime-box",className="tile"),
                 html.Div(id="sensor4-box",   className="tile"),
                 html.Div(id="sensor5-box",   className="tile"),
             ],
