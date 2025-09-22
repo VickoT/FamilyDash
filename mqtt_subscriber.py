@@ -23,8 +23,6 @@
 #   - If the process dies: broker publishes retained "offline" (the LWT)
 # -------------------------------------------------------------------------
 
-from __future__ import annotations
-
 import copy
 import json
 import os
@@ -42,18 +40,10 @@ MQTT_USER: Optional[str] = os.getenv("MQTT_USER") or None
 MQTT_PASS: Optional[str] = os.getenv("MQTT_PASS") or None
 MQTT_CLIENT: str         = os.getenv("MQTT_CLIENT", "familydash-default")
 
-WASHER_PREFIX: str       = os.getenv("WASHER_PREFIX", "home/washer")
-TOPIC_WASHER: str        = f"{WASHER_PREFIX}/time_to_end"
-
-# Dryer (torktumlare)
-DRYER_PREFIX: str        = os.getenv("DRYER_PREFIX", "home/torktumlare")
-TOPIC_DRYER: str         = f"{DRYER_PREFIX}/state"
-
-TOPIC_HEARTBEAT: str     = os.getenv("HEARTBEAT_TOPIC", "home/heartbeat")
-
-# Shelly: sätt ditt verkliga prefix (ex. "shellyhtg3-e4b323310e10")
-SHELLY_PREFIX: str       = os.getenv("SHELLY_PREFIX", "shelly-htg3")
-TOPIC_SHELLY: str        = f"{SHELLY_PREFIX}/#"
+TOPIC_WASHER: str       = "home/washer/time_to_end"
+TOPIC_DRYER: str        = "home/torktumlare/state"
+TOPIC_SHELLY: str        = "shelly-htg3/#"
+TOPIC_HEARTBEAT: str     = "home/heartbeat"
 
 DEBUG: bool              = os.getenv("MQTT_DEBUG", "0") == "1"
 

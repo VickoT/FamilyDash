@@ -17,7 +17,7 @@ SVG_STRING = r"""
   <g class="door" style="transform-origin:32px 38px">
     <circle cx="32" cy="38" r="14" fill="none" stroke="currentColor" stroke-width="3"/>
     <circle cx="32" cy="38" r="9"  fill="none" stroke="currentColor" stroke-width="3"/>
-    <path d="M22,38c3,-3 6,-3 10,0s7,3 10,0"
+    <path d="M23,38 c3,-3 6,-3 9,0 s6,3 9,0"
           fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
   </g>
 </svg>

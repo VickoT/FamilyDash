@@ -222,10 +222,11 @@ html, body{
 
 /**********************************************************
  * 6b) Dryer – samma mönster som washer (klass-baserat)
- **********************************************************/
-/* Ta bort p-marginaler som Markdown kan lägga in */
+ /**********************************************************
+/* Ta bort p-marginaler som Markdown kan lägga in (om SVG sätts via Markdown) */
 .dryer-card .dash-markdown > * { margin: 0; }
 
+/* Bas-stil */
 .dryer-card{
   background: var(--bg-card);
   border-radius: var(--radius-lg);
@@ -238,11 +239,12 @@ html, body{
   transition: background .15s, color .15s, box-shadow .15s;
 }
 
+/* Liten tidsrad i inaktivt läge */
 .dryer-card .time { font-size:.8rem; color:#aaa; }
 
-/* Aktivt läge – välj färg: samma gröna som washer */
+/* Aktivt läge – samma gröna som washer */
 .dryer-card.active{
-  background:#39ff14;     /* byt till #ffd24d om du vill särskilja */
+  background:#39ff14;      /* byt till #ffd24d om du vill särskilja */
   color:#000;
   box-shadow:0 0 16px #39ff14;
 }
@@ -260,16 +262,42 @@ html, body{
   width:84px;
   height:84px;
   display:block;
-  color: #000;
+  color:#000;              /* synlig på grön bakgrund i aktivt läge */
 }
-.dryer-card.active .dryer-svg{ color:#000; }
 
-/* (Valfritt) Snurra dörren som washer */
+/* -------------------------------------------------------
+   Animationer & visning
+   ----------------------------------------------------- */
+
+/* Dölj värmevågor när inaktiv */
+.dryer-card .dryer-svg .heat { display: none; }
+
+/* Visa & animera värmevågor när aktiv */
+@keyframes heat-wave {
+  0%   { transform: translateY(0);   opacity:.35; }
+  50%  { transform: translateY(-2px);opacity:.8;  }
+  100% { transform: translateY(0);   opacity:.35; }
+}
+.dryer-card.active .dryer-svg .heat { display:inline; opacity:.6; }
+.dryer-card.active .dryer-svg .heat path:nth-child(1) { animation: heat-wave 1.6s ease-in-out infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(2) { animation: heat-wave 1.6s ease-in-out .2s infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(3) { animation: heat-wave 1.6s ease-in-out .4s infinite; }
+
+/* Fläkt snurr (själva fläktgruppen har class="fan") */
+@keyframes fan-spin { to { transform: rotate(360deg); } }
+.dryer-card.active .dryer-svg .fan{
+  animation: fan-spin 1.4s linear infinite;
+  will-change: transform;
+  transform-origin: 32px 38px; /* matchar din SVG */
+}
+
+/* (Valfritt) snurra hela dörren också – kommentera bort om du inte vill detta */
 @keyframes dryer-spin { to { transform: rotate(360deg); } }
 .dryer-card.active .dryer-svg .door{
   animation: dryer-spin 1.6s linear infinite;
   will-change: transform;
-}
+  transform-origin: 32px 38px;
+}**********************************************************/
 
 /**********************************************************
  * 7) Tibber

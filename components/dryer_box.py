@@ -17,11 +17,26 @@ SVG_STRING = r"""
   <g class="door" style="transform-origin:32px 38px">
     <circle cx="32" cy="38" r="14" fill="none" stroke="currentColor" stroke-width="3"/>
     <circle cx="32" cy="38" r="9"  fill="none" stroke="currentColor" stroke-width="3"/>
-    <path d="M22,38c3,-3 6,-3 10,0s7,3 10,0"
-          fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g class="fan" style="transform-origin:32px 38px" fill="currentColor">
+    <circle cx="32" cy="38" r="1.6"/>
+    <path id="blade" d="
+      M32 38
+      C 30.5 36.2, 32 34.0, 34.5 33.2
+      C 37.0 32.5, 39.0 34.2, 39.5 36.0
+      C 40.0 37.8, 38.5 39.8, 36.5 40.3
+      C 34.5 40.8, 33.0 40.0, 32 38 Z" />
+    <use href="#blade" transform="rotate(120 32 38)"/>
+    <use href="#blade" transform="rotate(240 32 38)"/>
+  </g>
+  <g class="heat" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M47 32 q2 -3 4 0 t4 0" />
+    <path d="M48.5 38 q2 -3 4 0 t4 0" />
+    <path d="M47 44 q2 -3 4 0 t4 0" />
   </g>
 </svg>
 """
+
 
 def compute(snapshot: dict | None, tz, last_ts: dict | None):
     """
