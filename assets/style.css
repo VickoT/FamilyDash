@@ -20,6 +20,9 @@
 
   --gap: 10px;
   --pad: 2px;
+
+  /* Apparat-tiles */
+  --accent-active: #39ff14; /* grön när aktiv (washer/dryer) */
 }
 
 html, body{
@@ -27,6 +30,10 @@ html, body{
   background:var(--bg-app);
   height:100%; width:100%;
   overflow:hidden;
+  color: var(--fg-text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 *,
@@ -55,7 +62,7 @@ html, body{
 #tibber-box   { grid-column: 2 / 4; grid-row: 2 / 3;  min-height:0; }
 
 /**********************************************************
- * 3) Gemensam kort-stil
+ * 3) Gemensam kort-stil (ram)
  **********************************************************/
 .box{
   background: var(--bg-app);
@@ -66,7 +73,7 @@ html, body{
 }
 
 /**********************************************************
- * 4) Kalenderkolumn
+ * 4) Kalender
  **********************************************************/
 #calendar-box{
   display: flex;
@@ -84,46 +91,22 @@ html, body{
   color: var(--fg-text);
   padding: 6px 4px 6px 10px;
 
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  flex: 1 1 auto;
-  min-height: 34px;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: flex-start;
+  flex: 1 1 auto; min-height: 34px; overflow: hidden;
 }
 
-.day.today{
-  background: var(--bg-day-today);
-  border-color: var(--border-day-today);
+.day.today{ background: var(--bg-day-today); border-color: var(--border-day-today); }
+
+.day-label, .day-title{
+  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+  font-size: 1rem; color: var(--fg-muted); flex: 0 0 auto;
 }
 
-.day-label,
-.day-title{
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-  font-size: 1rem;
-  color: var(--fg-muted);
-  flex: 0 0 auto;
-}
+.day .day-title.sunday, .day .day-label.sunday{ color: var(--fg-sunday) !important; }
 
-.day .day-title.sunday,
-.day .day-label.sunday{ color: var(--fg-sunday) !important; }
-
-.events,
-.day-content{
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
-  display: block !important;
-  font-size: 1.3rem;
-  font-weight: 600;
-
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-  text-wrap: pretty;
+.events, .day-content{
+  margin: 6px 0 0; padding: 0; list-style: none; display: block !important;
+  font-size: 1.3rem; font-weight: 600; flex: 1 1 auto; min-height: 0; overflow: hidden; text-wrap: pretty;
 }
 
 #calendar-box .day:last-child{ margin-bottom: 0; }
@@ -131,28 +114,27 @@ html, body{
 /**********************************************************
  * 5) Väder
  **********************************************************/
-.weather-card { display:flex; flex-direction:column; gap:8px;
-    background:var(--bg-card); padding: 10px; margin: 5px;}
-.wx-title     { font-size:.95rem; opacity:.8; margin-bottom:2px; }
-.wx-row-main  { display:flex; align-items:center; gap:14px; }
-.wx-ico.big   { font-size:64px; line-height:1; }
-.wx-now-col   { display:flex; flex-direction:column; gap:2px; }
-.wx-sub       { font-size:.85rem; opacity:.75; }
-.wx-now       { font-size:2rem; font-weight:600; }
-.wx-stats     { list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
-.wx-stats li  { display:flex; justify-content:space-between; margin:2px 0; }
-.wx-ts        { font-size:.8rem; opacity:.6; margin-top:6px; }
+.weather-card {
+  display:flex; flex-direction:column; gap:8px;
+  background:var(--bg-card); padding: 10px; margin: 5px;
+  border-radius: var(--radius-lg);
+}
+.wx-title{ font-size:.95rem; opacity:.8; margin-bottom:2px; }
+.wx-row-main{ display:flex; align-items:center; gap:14px; }
+.wx-ico.big{ font-size:64px; line-height:1; }
+.wx-now-col{ display:flex; flex-direction:column; gap:2px; }
+.wx-sub{ font-size:.85rem; opacity:.75; }
+.wx-now{ font-size:2rem; font-weight:600; }
+.wx-stats{ list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
+.wx-stats li{ display:flex; justify-content:space-between; margin:2px 0; }
+.wx-ts{ font-size:.8rem; opacity:.6; margin-top:6px; }
 
 .uv{ font-weight:600; }
-.uv-low{ color:#2e7d32; }
-.uv-medium{ color:#f9a825; }
-.uv-high{ color:#fb8c00; }
-.uv-very-high{ color:#c62828; }
-.uv-extreme{ color:#6a1b9a; }
-.uv-unknown{ color:inherit; opacity:.7; }
+.uv-low{ color:#2e7d32; } .uv-medium{ color:#f9a825; } .uv-high{ color:#fb8c00; }
+.uv-very-high{ color:#c62828; } .uv-extreme{ color:#6a1b9a; } .uv-unknown{ color:inherit; opacity:.7; }
 
 /**********************************************************
- * 6) Widgets – 4×2 intern grid
+ * 6) Widgets – 4×2 grid
  **********************************************************/
 #widgets-box{
   display: grid;
@@ -168,148 +150,90 @@ html, body{
   border-radius: var(--radius-lg);
   padding: var(--pad);
   display:flex; align-items:center; justify-content:center;
-  color: var(--fg-text); font-weight:600;
-  min-height:0;
+  color: var(--fg-text); font-weight:600; min-height:0;
 }
 
-.tile.span-2c { grid-column: span 2; }
-.tile.span-2r { grid-row: span 2; }
+.tile.span-2c{ grid-column: span 2; }
+.tile.span-2r{ grid-row: span 2; }
 
 /**********************************************************
- * 6a) Washer
+ * 6a) Appliance tiles (gemensam bas för washer/dryer/KIA)
  **********************************************************/
-#washer-box{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-
-  background:var(--bg-card);
-  border-radius:var(--radius-lg);
-  color:var(--fg-text);
-
-  transition: background .15s, color .15s, box-shadow .15s;
+.appliance-card{
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  color: var(--fg-text);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; transition: background .15s, color .15s, box-shadow .15s;
 }
 
-#washer-box .time { font-size:.8rem; color:#aaa; }
+.appliance-card .time{ font-size:.8rem; color:#aaa; }
+.appliance-card .value{ font-size:1.4rem; font-weight:700; color:#fff; line-height:1; }
 
-#washer-box.active {
-  background:#39ff14;
+.appliance-card .appliance-svg{ width:84px; height:84px; display:block; color:#000; }
+
+/* Aktivt läge (delat) */
+.appliance-card.active{
+  background: var(--accent-active);
   color:#000;
-  box-shadow:0 0 16px #39ff14;
+  box-shadow: 0 0 16px var(--accent-active);
 }
 
-#washer-box.active .value {
-  font-size: 2rem;
-  color: #000;
-  line-height: 1;
-  margin-top: 0;
-}
+/**********************************************************
+ * 6b) Washer – unika delar
+ **********************************************************/
+#washer-box .time{ font-size:.8rem; color:#aaa; }
 
-@keyframes washer-spin { to { transform: rotate(360deg); } }
-#washer-box.active .washer-svg .door {
+@keyframes washer-spin{ to { transform: rotate(360deg); } }
+#washer-box.active .washer-svg .door{
   animation: washer-spin 1.6s linear infinite;
   will-change: transform;
 }
 
-.washer-svg {
-  width:84px;
-  height:84px;
-  display:block;
-  color:#000;
-}
+.washer-svg{ width:84px; height:84px; display:block; color:#000; }
 
 /**********************************************************
- * 6b) Dryer – samma mönster som washer (klass-baserat)
- /**********************************************************
-/* Ta bort p-marginaler som Markdown kan lägga in (om SVG sätts via Markdown) */
-.dryer-card .dash-markdown > * { margin: 0; }
+ * 6c) Dryer – unika delar + animationer
+ **********************************************************/
+.dryer-card .dash-markdown > *{ margin: 0; }     /* ta bort MD-marginaler */
+.dryer-card .dryer-svg{ width:84px; height:84px; display:block; color:#000; }
 
-/* Bas-stil */
-.dryer-card{
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  color: var(--fg-text);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  transition: background .15s, color .15s, box-shadow .15s;
+.dryer-card .dryer-svg .heat{ display:none; }
+@keyframes heat-wave{
+  0%{ transform: translateY(0); opacity:.35; }
+  50%{ transform: translateY(-2px); opacity:.8; }
+  100%{ transform: translateY(0); opacity:.35; }
 }
+.dryer-card.active .dryer-svg .heat{ display:inline; opacity:.6; }
+.dryer-card.active .dryer-svg .heat path:nth-child(1){ animation: heat-wave 1.6s ease-in-out infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(2){ animation: heat-wave 1.6s ease-in-out .2s infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(3){ animation: heat-wave 1.6s ease-in-out .4s infinite; }
 
-/* Liten tidsrad i inaktivt läge */
-.dryer-card .time { font-size:.8rem; color:#aaa; }
-
-/* Aktivt läge – samma gröna som washer */
-.dryer-card.active{
-  background:#39ff14;      /* byt till #ffd24d om du vill särskilja */
-  color:#000;
-  box-shadow:0 0 16px #39ff14;
-}
-
-/* Stor tidsrad när aktiv */
-.dryer-card.active .value{
-  font-size:2rem;
-  line-height:1;
-  margin-top:0;
-  color:#000;
-}
-
-/* Ikonstorlek + färg (ärver currentColor inne i SVG) */
-.dryer-card .dryer-svg{
-  width:84px;
-  height:84px;
-  display:block;
-  color:#000;              /* synlig på grön bakgrund i aktivt läge */
-}
-
-/* -------------------------------------------------------
-   Animationer & visning
-   ----------------------------------------------------- */
-
-/* Dölj värmevågor när inaktiv */
-.dryer-card .dryer-svg .heat { display: none; }
-
-/* Visa & animera värmevågor när aktiv */
-@keyframes heat-wave {
-  0%   { transform: translateY(0);   opacity:.35; }
-  50%  { transform: translateY(-2px);opacity:.8;  }
-  100% { transform: translateY(0);   opacity:.35; }
-}
-.dryer-card.active .dryer-svg .heat { display:inline; opacity:.6; }
-.dryer-card.active .dryer-svg .heat path:nth-child(1) { animation: heat-wave 1.6s ease-in-out infinite; }
-.dryer-card.active .dryer-svg .heat path:nth-child(2) { animation: heat-wave 1.6s ease-in-out .2s infinite; }
-.dryer-card.active .dryer-svg .heat path:nth-child(3) { animation: heat-wave 1.6s ease-in-out .4s infinite; }
-
-/* Fläkt snurr (själva fläktgruppen har class="fan") */
-@keyframes fan-spin { to { transform: rotate(360deg); } }
+@keyframes fan-spin{ to { transform: rotate(360deg); } }
 .dryer-card.active .dryer-svg .fan{
   animation: fan-spin 1.4s linear infinite;
   will-change: transform;
-  transform-origin: 32px 38px; /* matchar din SVG */
+  transform-origin: 32px 38px;
 }
 
-/* (Valfritt) snurra hela dörren också – kommentera bort om du inte vill detta */
-@keyframes dryer-spin { to { transform: rotate(360deg); } }
-.dryer-card.active .dryer-svg .door{
-  animation: dryer-spin 1.6s linear infinite;
-  will-change: transform;
-  transform-origin: 32px 38px;
-}**********************************************************/
+/**********************************************************
+ * 6d) KIA – minimal stil utan ikoner (nu)
+ **********************************************************/
+.kia-card .kv-ts{
+  margin-top: .15rem;
+  font-size: .9rem;
+  opacity: .7;
+}
 
 /**********************************************************
  * 7) Tibber
  **********************************************************/
 #tibber-box{ min-height:0; }
-#tibber-box .tibber-graph{
-  width: 100%;
-  height: 100%;
-}
+#tibber-box .tibber-graph{ width:100%; height:100%; }
 
 /**********************************************************
  * 8) Hjälpklasser
  **********************************************************/
 .value{ color:#fff; font-size:1rem; font-weight:bold; }
 .hide{ display:none !important; }
+.box-title{ font-weight:600; opacity:.9; margin-bottom:.25rem; }

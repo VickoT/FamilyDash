@@ -59,3 +59,4 @@ kiosk:
 clean_cache:
 	find . -name "__pycache__" -type d -exec rm -r {} +
 
+do_all: push-dash deploy-pi kiosk

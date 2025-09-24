@@ -2,9 +2,9 @@
 from dash import html, dcc, no_update
 from datetime import datetime, timezone
 
-# Samma ikon som washer (klassnamn bytt till dryer-svg)
+# SVG får både appliance-svg (gemensam storlek/färg) och dryer-svg (unika regler)
 SVG_STRING = r"""
-<svg class="dryer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg class="appliance-svg dryer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <g class="frame" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <rect x="5" y="7" width="54" height="50" rx="6"/>
     <line x1="5" y1="19" x2="59" y2="19"/>
@@ -37,13 +37,11 @@ SVG_STRING = r"""
 </svg>
 """
 
-
 def compute(snapshot: dict | None, tz, last_ts: dict | None):
     """
     snapshot['dryer'] = {
       'ts': <epoch>,
       'time_left': <int|min>   # minuter kvar; >0 = aktiv
-      # (status kan finnas, men vi följer washer och tittar bara på time_left)
     }
     Returnerar (children|no_update, className|no_update, updated_last_ts)
     """
@@ -53,7 +51,7 @@ def compute(snapshot: dict | None, tz, last_ts: dict | None):
 
     # 1) Ingen data ännu → placeholder
     if not ts:
-        return _placeholder_children(), "box dryer-card", last_ts
+        return _placeholder_children(), "box appliance-card dryer-card", last_ts
 
     # 2) De-dupe: samma ts som senast → inga DOM-uppdateringar
     if last_ts.get("dryer") == ts:
@@ -64,7 +62,7 @@ def compute(snapshot: dict | None, tz, last_ts: dict | None):
     last_ts["dryer"] = ts
     return children, klass, last_ts
 
-# ---- Interna helpers (samma upplägg som washer) -------------------------
+# ---- Interna helpers ----------------------------------------------------
 def _placeholder_children():
     return [
         dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
@@ -86,14 +84,14 @@ def _render(d: dict, tz):
             dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
             html.Div(_fmt_hhmm(minutes), className="value"),
         ]
-        klass = "box dryer-card active"
+        klass = "box appliance-card dryer-card active"
     else:
         ts_str = _fmt_dt(ts, tz) if ts else "–"
         children = [
             dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
             html.Div(ts_str, className="time"),
         ]
-        klass = "box dryer-card"
+        klass = "box appliance-card dryer-card"
 
     return children, klass
 

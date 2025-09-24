@@ -2,9 +2,9 @@
 from dash import html, dcc, no_update
 from datetime import datetime, timezone
 
-# Samma SVG som du redan använder
+# SVG: lägg till både appliance-svg (gemensam stil) och washer-svg (unika regler)
 SVG_STRING = r"""
-<svg class="washer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg class="appliance-svg washer-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <g class="frame" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <rect x="5" y="7" width="54" height="50" rx="6"/>
     <line x1="5" y1="19" x2="59" y2="19"/>
@@ -27,16 +27,14 @@ SVG_STRING = r"""
 def box():
     """Wrapper för layouten."""
     # Starta med neutral tile tills första MQTT kommer
-    children, klass = _placeholder_children(), "box washer-card"
+    children = _placeholder_children()
+    klass = "box appliance-card washer-card"
     return html.Div(id="washer-box", className=klass, children=children)
 
 def compute(snapshot: dict | None, tz, last_ts: dict | None):
     """
-    Server-side de-dupe och render:
-      snapshot: dict med snapshot["washer"] = {"ts": <epoch>, "time_to_end_min": <int|float>}
-      tz:       ZoneInfo (Europe/Stockholm)
-      last_ts:  dcc.Store-data
-    Returnerar (children | no_update, className | no_update, updated_last_ts)
+    snapshot['washer'] = {'ts': <epoch>, 'time_to_end_min': <int|float>}
+    Returnerar (children|no_update, className|no_update, updated_last_ts)
     """
     last_ts = (last_ts or {}).copy()
     w = (snapshot or {}).get("washer") or {}
@@ -44,13 +42,13 @@ def compute(snapshot: dict | None, tz, last_ts: dict | None):
 
     # 1) Ingen data ännu → placeholder
     if not ts:
-        return _placeholder_children(), "box washer-card", last_ts
+        return _placeholder_children(), "box appliance-card washer-card", last_ts
 
-    # 2) De-dupe: samma ts som senast → inga DOM-uppdateringar
+    # 2) De-dupe
     if last_ts.get("washer") == ts:
         return no_update, no_update, last_ts
 
-    # 3) Ny data → rendera och spara ts
+    # 3) Ny data
     children, klass = _render(w, tz)
     last_ts["washer"] = ts
     return children, klass, last_ts
@@ -59,7 +57,7 @@ def compute(snapshot: dict | None, tz, last_ts: dict | None):
 def _placeholder_children():
     return [
         dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
-        html.Div("Venter på data …", className="time"),  # dansk
+        html.Div("Venter på data …", className="time"),
     ]
 
 def _render(w: dict, tz):
@@ -73,26 +71,23 @@ def _render(w: dict, tz):
     ts = w.get("ts")
 
     if running:
-        # Aktiv → visa bara tid kvar
         children = [
             dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
-            html.Div(f"{_fmt_hhmm(minutes)}", className="value"),
+            html.Div(_fmt_hhmm(minutes), className="value"),
         ]
-        klass = "box washer-card active"
+        klass = "box appliance-card washer-card active"
     else:
-        # Inaktiv → visa bara ts
         ts_str = _fmt_dt(ts, tz) if ts else "–"
         children = [
             dcc.Markdown(SVG_STRING, dangerously_allow_html=True),
             html.Div(ts_str, className="time"),
         ]
-        klass = "box washer-card"
+        klass = "box appliance-card washer-card"
 
     return children, klass
 
 def _fmt_dt(ts, tz):
     try:
-        from datetime import datetime, timezone
         return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(tz).strftime("%Y-%m-%d, %H:%M")
     except Exception:
         return "–"

@@ -42,10 +42,10 @@ app.layout = html.Div(
                 html.Div(id="dryer-box", className="box dryer-card"),
                 html.Div(id="shelly-box",    className="tile"),
                 html.Div(id="heartbeat-box", className="tile"),
+                html.Div(id="kia-box", className="box kia-card"),
                 html.Div(id="sensor3-box",   className="tile"),
                 html.Div(id="washertime-box",className="tile"),
                 html.Div(id="sensor5-box",   className="tile"),
-                html.Div(id="kia-box", className="box kia-card"),
             ],
         ),
 
