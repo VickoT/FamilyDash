@@ -6,6 +6,7 @@ from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
 from components.washer_box import box as washer_box, compute as washer_compute
 from components.dryer_box import compute as dryer_compute
+from components.kia_box import kia_compute
 
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
@@ -43,8 +44,8 @@ app.layout = html.Div(
                 html.Div(id="heartbeat-box", className="tile"),
                 html.Div(id="sensor3-box",   className="tile"),
                 html.Div(id="washertime-box",className="tile"),
-                html.Div(id="sensor4-box",   className="tile"),
                 html.Div(id="sensor5-box",   className="tile"),
+                html.Div(id="kia-box", className="box kia-card"),
             ],
         ),
 
@@ -66,6 +67,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-shelly", data={}),
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),   # <-- NY
+        dcc.Store(id="last-ts-kia", data={}),
     ],
 )
 
@@ -106,7 +108,7 @@ def refresh_shelly(_n, last_ts):
     ts = s.get("ts")
 
     if not ts:
-        return html.Div([html.Div("Soveværelse"), html.Div("Väntar på sensor …")]), last_ts
+        return html.Div([html.Div("Shelly temp."), html.Div("Väntar på sensor …")]), last_ts
 
     if last_ts.get("shelly") == ts:
         return no_update, last_ts
@@ -114,7 +116,7 @@ def refresh_shelly(_n, last_ts):
     t = s.get("tC"); h = s.get("rh")
     ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
     view = html.Div([
-        html.Div("Soveværelse"),
+        html.Div("Shelly temp."),
         html.Div(f"Temp: {t:.1f} °C" if isinstance(t, (int, float)) else "Temp: –"),
         html.Div(f"Fukt: {h:.1f} %" if isinstance(h, (int, float)) else "Fukt: –"),
         html.Div(f"Tid: {ts_str}"),
@@ -155,6 +157,17 @@ def refresh_heartbeat(_n):
         html.Div(f"Senast: {ts_str}"),
         html.Div(f"Status: {status}"),
     ])
+
+# ---- KIA ---------------------------------------------------------------
+@app.callback(
+    [Output("kia-box", "children"),
+     Output("kia-box", "className"),
+     Output("last-ts-kia", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-kia", "data"),
+)
+def cb_kia(_n, last_ts):
+    return kia_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)

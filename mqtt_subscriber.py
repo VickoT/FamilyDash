@@ -50,6 +50,7 @@ TOPIC_DRYER: str     = "home/torktumlare/state"
 SHELLY_PREFIX: str   = "shelly-htg3"
 TOPIC_SHELLY: str    = f"{SHELLY_PREFIX}/#"
 TOPIC_HEARTBEAT: str = "home/heartbeat"
+TOPIC_KIA: str       = "home/kia/state"
 
 DEBUG: bool          = True
 
@@ -59,6 +60,7 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "dryer":     {"status": None, "time_left": None,       "ts": None},
     "heartbeat": {"last": None,   "ts": None},
     "shelly":    {"tC": None, "rh": None, "online": None,  "ts": None},
+    "kia":       {"battery": None, "range": None, "ts": None},
 }
 _lock = threading.Lock()
 
@@ -107,7 +109,8 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_DRYER, qos=0)
     cli.subscribe(TOPIC_HEARTBEAT, qos=0)
     cli.subscribe(TOPIC_SHELLY, qos=0)
-    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}")
+    cli.subscribe(TOPIC_KIA, qos=0)
+    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_KIA}")
 
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
@@ -147,6 +150,17 @@ def _parse_shelly(topic: str, payload: str) -> None:
         _set("shelly", rh=_to_float(payload))
         return
 
+def _parse_kia(payload: str) -> None:
+    if payload.startswith("{") and payload.endswith("}"):
+        try:
+            d = json.loads(payload)
+            battery = _to_int(d.get("battery"))
+            range_km = _to_int(d.get("range"))
+            _set("kia", battery=battery, range=range_km)
+            return
+        except Exception as e:
+            if DEBUG:
+                print(f"[mqtt] kia json warn: {e}")
 
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     payload = msg.payload.decode("utf-8", errors="replace").strip()
@@ -196,6 +210,10 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic.startswith(SHELLY_PREFIX):
         _parse_shelly(msg.topic, payload)
         return
+    # Kia ---------------------------------------------------------------
+    if msg.topic == TOPIC_KIA:
+        _parse_kia(payload)
+        return
 
 
 # --- Start (idempotent, bakgrundstråd) ----------------------------------
@@ -214,7 +232,6 @@ def start() -> None:
             cli = mqtt.Client(
                 mqtt.CallbackAPIVersion.VERSION2,
                 client_id=MQTT_CLIENT,
-                clean_session=True,
             )
             if MQTT_USER:
                 cli.username_pw_set(MQTT_USER, MQTT_PASS)
