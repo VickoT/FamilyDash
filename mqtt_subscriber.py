@@ -2,26 +2,26 @@
 # -------------------------------------------------------------------------
 # FamilyDash MQTT subscriber (fire-and-forget).
 #
-# Listens to:
-#   - Washer time-to-end JSON: {WASHER_PREFIX}/time_to_end
-#       { "status": "Wash|Rinse|...", "time_to_end_min": 73 }
-#   - Dryer state JSON:        {DRYER_PREFIX}/state
-#       { "status": "drying|none|...", "time_left": 145 }
-#   - Heartbeat:               home/heartbeat
-#   - Shelly H&T wildcard:     {SHELLY_PREFIX}/#
+# Lyssnar på:
+#   - Tvättmaskin:  home/washer/time_to_end
+#   - Torktumlare:  home/torktumlare/state
+#   - Heartbeat:    home/heartbeat
+#   - Shelly:       shelly-htg3/#
 #
-# Keeps a tiny, thread-safe snapshot for your UI:
+# Håller en tråd-säker snapshot för UI:t:
 #   snapshot = {
 #     "washer":    {"status": str|None, "time_to_end_min": int|None, "ts": int|None},
 #     "dryer":     {"status": str|None, "time_left": int|None,       "ts": int|None},
 #     "heartbeat": {"last": str|None,   "ts": int|None},
-#     "shelly":    {"tC": float|None, "rh": float|None, "online": bool|None, "ts": int|None},
+#     "shelly":    {"tC": float|None,   "rh": float|None, "online": bool|None, "ts": int|None},
 #   }
 #
 # Presence (LWT):
-#   - On connect: publish retained "online" to clients/<client_id>/status
-#   - If the process dies: broker publishes retained "offline" (the LWT)
+#   - LWT (retained):  clients/<client_id>/status = offline
+#   - Vid lyckad connect: publish retained "online" på samma topic
 # -------------------------------------------------------------------------
+
+from __future__ import annotations
 
 import copy
 import json
@@ -33,19 +33,25 @@ from typing import Any, Dict, Optional
 import paho.mqtt.client as mqtt
 
 # --- Env -----------------------------------------------------------------
+def _get_port() -> int:
+    # Hantera ev. citattecken i .env ("1883")
+    raw = os.getenv("MQTT_PORT", "1883")
+    return int(str(raw).strip().strip('"').strip("'"))
+
 MQTT_ENABLE: bool        = os.getenv("MQTT_ENABLE", "1") == "1"
 MQTT_HOST: str           = os.getenv("MQTT_HOST", "localhost")
-MQTT_PORT: int           = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_PORT: int           = _get_port()
 MQTT_USER: Optional[str] = os.getenv("MQTT_USER") or None
 MQTT_PASS: Optional[str] = os.getenv("MQTT_PASS") or None
 MQTT_CLIENT: str         = os.getenv("MQTT_CLIENT", "familydash-default")
 
-TOPIC_WASHER: str       = "home/washer/time_to_end"
-TOPIC_DRYER: str        = "home/torktumlare/state"
-TOPIC_SHELLY: str        = "shelly-htg3/#"
-TOPIC_HEARTBEAT: str     = "home/heartbeat"
+TOPIC_WASHER: str    = "home/washer/time_to_end"
+TOPIC_DRYER: str     = "home/torktumlare/state"
+SHELLY_PREFIX: str   = "shelly-htg3"
+TOPIC_SHELLY: str    = f"{SHELLY_PREFIX}/#"
+TOPIC_HEARTBEAT: str = "home/heartbeat"
 
-DEBUG: bool              = os.getenv("MQTT_DEBUG", "0") == "1"
+DEBUG: bool          = True
 
 # --- Shared snapshot -----------------------------------------------------
 _snapshot: Dict[str, Dict[str, Any]] = {
@@ -88,22 +94,35 @@ def _set(section: str, **kwargs: Any) -> None:
         _snapshot[section]["ts"] = _now()
 
 
-# --- MQTT callbacks ------------------------------------------------------
-def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any, rc: int, _props=None) -> None:
-    print(f"[mqtt] connected rc={rc}, id={MQTT_CLIENT}")
+# --- MQTT callbacks (Paho v2) -------------------------------------------
+def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
+                reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
+    print(f"[mqtt] connected reason_code={reason_code}, id={MQTT_CLIENT}")
+    # Birth (announce online, retained) efter bekräftad uppkoppling
+    status_topic = f"clients/{MQTT_CLIENT}/status"
+    cli.publish(status_topic, payload="online", qos=1, retain=True)
+
+    # Subscriptions
     cli.subscribe(TOPIC_WASHER, qos=0)
-    cli.subscribe(TOPIC_DRYER, qos=0)       # NEW
+    cli.subscribe(TOPIC_DRYER, qos=0)
     cli.subscribe(TOPIC_HEARTBEAT, qos=0)
     cli.subscribe(TOPIC_SHELLY, qos=0)
     print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}")
 
 
+def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
+    print(f"[mqtt] disconnected reason_code={reason_code}, id={MQTT_CLIENT}")
+    # LWT sköter 'offline' vid oväntad disconnect. Vid snygg nedstängning kan man vilja publicera 'offline' här.
+    # status_topic = f"clients/{MQTT_CLIENT}/status"
+    # cli.publish(status_topic, payload="offline", qos=1, retain=True)
+
+
 def _parse_shelly(topic: str, payload: str) -> None:
     """
-    Shelly Gen3 (Wi-Fi) tolerant parsing:
+    Shelly Gen3 tolerant parsing:
     - '<prefix>/online' -> 'true'/'false'
-    - JSON with keys like 'tC' and 'rh'
-    - Plain numbers on subtopics like .../temperature, .../humidity
+    - JSON med nycklar 'tC' och 'rh'
+    - Plain numbers på subtopics som .../temperature, .../humidity
     """
     if topic.endswith("/online"):
         _set("shelly", online=(payload.strip().lower() == "true"))
@@ -179,7 +198,7 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
         return
 
 
-# --- Start (fire-and-forget) --------------------------------------------
+# --- Start (idempotent, bakgrundstråd) ----------------------------------
 def start() -> None:
     """Start the MQTT client in a background daemon thread (idempotent)."""
     if not MQTT_ENABLE:
@@ -191,6 +210,7 @@ def start() -> None:
 
     def _loop() -> None:
         try:
+            print(f"[mqtt] host={MQTT_HOST} port={MQTT_PORT} id={MQTT_CLIENT} user={'set' if MQTT_USER else 'none'}")
             cli = mqtt.Client(
                 mqtt.CallbackAPIVersion.VERSION2,
                 client_id=MQTT_CLIENT,
@@ -199,19 +219,16 @@ def start() -> None:
             if MQTT_USER:
                 cli.username_pw_set(MQTT_USER, MQTT_PASS)
 
-            # Presence (LWT + birth)
+            # Presence (LWT retained 'offline')
             status_topic = f"clients/{MQTT_CLIENT}/status"
-            cli.will_set(status_topic, payload="offline", retain=True)
+            cli.will_set(status_topic, payload="offline", qos=1, retain=True)
 
             cli.on_connect = _on_connect
+            cli.on_disconnect = _on_disconnect
             cli.on_message = _on_message
 
-            print(f"[mqtt] connecting to {MQTT_HOST}:{MQTT_PORT} as {MQTT_CLIENT}…")
             cli.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
             cli.loop_start()
-
-            # Birth (announce online, retained)
-            cli.publish(status_topic, payload="online", retain=True)
             print("[mqtt] loop started")
         except Exception as e:
             print(f"[mqtt] ERROR: {e}")
