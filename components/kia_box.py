@@ -13,7 +13,7 @@ KIA_SVG = r"""
 
 def kia_compute(snapshot, local_tz, last_ts):
     last_ts = last_ts or {}
-    kia = (snapshot or {}).get("kia", {})
+    kia = (snapshot or {}).get("car", {})
     ts = kia.get("ts")
 
     if not ts:
@@ -23,7 +23,7 @@ def kia_compute(snapshot, local_tz, last_ts):
         ])
         return view, "box appliance-card kia-card", last_ts
 
-    if last_ts.get("kia") == ts:
+    if last_ts.get("car") == ts:
         return no_update, no_update, last_ts
 
     ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(local_tz).strftime("%Y-%m-%d, %H:%M")
@@ -38,5 +38,5 @@ def kia_compute(snapshot, local_tz, last_ts):
         html.Div(ts_str, className="kv-ts"),
     ])
 
-    last_ts["kia"] = ts
+    last_ts["car"] = ts
     return view, "box appliance-card kia-card", last_ts

@@ -45,12 +45,15 @@ MQTT_USER: Optional[str] = os.getenv("MQTT_USER") or None
 MQTT_PASS: Optional[str] = os.getenv("MQTT_PASS") or None
 MQTT_CLIENT: str         = os.getenv("MQTT_CLIENT", "familydash-default")
 
-TOPIC_WASHER: str    = "home/washer/time_to_end"
-TOPIC_DRYER: str     = "home/torktumlare/state"
+TOPIC_WASHER: str    = "home/appliance/washer/state"
+TOPIC_DRYER: str     = "home/appliance/dryer/state"
+TOPIC_HEARTBEAT: str = "home/system/heartbeat"
+TOPIC_CAR: str       = "home/car/state"
+TOPIC_SHELLY_BHT: str = "home/env/livingroom/ht/state"
+
 SHELLY_PREFIX: str   = "shelly-htg3"
 TOPIC_SHELLY: str    = f"{SHELLY_PREFIX}/#"
-TOPIC_HEARTBEAT: str = "home/heartbeat"
-TOPIC_KIA: str       = "home/kia/state"
+
 
 DEBUG: bool          = True
 
@@ -60,7 +63,8 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "dryer":     {"status": None, "time_left": None,       "ts": None},
     "heartbeat": {"last": None,   "ts": None},
     "shelly":    {"tC": None, "rh": None, "online": None,  "ts": None},
-    "kia":       {"battery": None, "range": None, "ts": None},
+    "car":       {"battery": None, "range": None, "ts": None},
+    "shelly_bht":  {"t": None, "rh": None, "ts": None},
 }
 _lock = threading.Lock()
 
@@ -109,8 +113,9 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_DRYER, qos=0)
     cli.subscribe(TOPIC_HEARTBEAT, qos=0)
     cli.subscribe(TOPIC_SHELLY, qos=0)
-    cli.subscribe(TOPIC_KIA, qos=0)
-    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_KIA}")
+    cli.subscribe(TOPIC_CAR, qos=0)
+    cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
+    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_CAR}, {TOPIC_SHELLY_BHT}")
 
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
@@ -150,17 +155,29 @@ def _parse_shelly(topic: str, payload: str) -> None:
         _set("shelly", rh=_to_float(payload))
         return
 
-def _parse_kia(payload: str) -> None:
+def _parse_car(payload: str) -> None:
     if payload.startswith("{") and payload.endswith("}"):
         try:
             d = json.loads(payload)
             battery = _to_int(d.get("battery"))
             range_km = _to_int(d.get("range"))
-            _set("kia", battery=battery, range=range_km)
+            _set("car", battery=battery, range=range_km)
             return
         except Exception as e:
             if DEBUG:
-                print(f"[mqtt] kia json warn: {e}")
+                print(f"[mqtt] car json warn: {e}")
+
+def _parse_shelly_bht(payload: str) -> None:
+    if payload.startswith("{") and payload.endswith("}"):
+        try:
+            d = json.loads(payload)
+            t = _to_float(d.get("t"))
+            rh = _to_float(d.get("rh"))
+            _set("shelly_bht", t=t, rh=rh)
+            return
+        except Exception as e:
+            if DEBUG:
+                print(f"[mqtt] shelly_bht json warn: {e}")
 
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     payload = msg.payload.decode("utf-8", errors="replace").strip()
@@ -210,9 +227,14 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic.startswith(SHELLY_PREFIX):
         _parse_shelly(msg.topic, payload)
         return
-    # Kia ---------------------------------------------------------------
-    if msg.topic == TOPIC_KIA:
-        _parse_kia(payload)
+    # Car ---------------------------------------------------------------
+    if msg.topic == TOPIC_CAR:
+        _parse_car(payload)
+        return
+
+    # Shelly BHT ----------------------------------------------------------
+    if msg.topic == TOPIC_SHELLY_BHT:
+        _parse_shelly_bht(payload)
         return
 
 
