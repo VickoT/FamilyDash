@@ -7,6 +7,7 @@ from components.weather_box import weather_box
 from components.washer_box import box as washer_box, compute as washer_compute
 from components.dryer_box import compute as dryer_compute
 from components.kia_box import kia_compute
+from components.bht_box import bht_compute
 
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
@@ -43,7 +44,7 @@ app.layout = html.Div(
                 html.Div(id="shelly-box",    className="tile"),
                 html.Div(id="heartbeat-box", className="tile"),
                 html.Div(id="kia-box", className="box kia-card"),
-                html.Div(id="sensor3-box",   className="tile"),
+                html.Div(id="bht-box", className="box climate-card"),
                 html.Div(id="washertime-box",className="tile"),
                 html.Div(id="sensor5-box",   className="tile"),
             ],
@@ -68,6 +69,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),   # <-- NY
         dcc.Store(id="last-ts-kia", data={}),
+        dcc.Store(id="last-ts-bht", data={}),
     ],
 )
 
@@ -168,6 +170,17 @@ def refresh_heartbeat(_n):
 )
 def cb_kia(_n, last_ts):
     return kia_compute(get_snapshot(), LOCAL_TZ, last_ts)
+
+# ---- BHT (klimat) -------------------------------------------------------
+@app.callback(
+    [Output("bht-box", "children"),
+     Output("bht-box", "className"),
+     Output("last-ts-bht", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-bht", "data"),
+)
+def cb_bht(_n, last_ts):
+    return bht_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
