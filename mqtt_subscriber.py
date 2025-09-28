@@ -2,25 +2,12 @@
 # -------------------------------------------------------------------------
 # FamilyDash MQTT subscriber (fire-and-forget).
 #
-# Lyssnar på:
-#   - Tvättmaskin:  home/washer/time_to_end
-#   - Torktumlare:  home/torktumlare/state
-#   - Heartbeat:    home/heartbeat
-#   - Shelly:       shelly-htg3/#
-#
-# Håller en tråd-säker snapshot för UI:t:
-#   snapshot = {
-#     "washer":    {"status": str|None, "time_to_end_min": int|None, "ts": int|None},
-#     "dryer":     {"status": str|None, "time_left": int|None,       "ts": int|None},
-#     "heartbeat": {"last": str|None,   "ts": int|None},
-#     "shelly":    {"tC": float|None,   "rh": float|None, "online": bool|None, "ts": int|None},
-#   }
-#
 # Presence (LWT):
 #   - LWT (retained):  clients/<client_id>/status = offline
 #   - Vid lyckad connect: publish retained "online" på samma topic
 # -------------------------------------------------------------------------
 
+# ta bort?
 from __future__ import annotations
 
 import copy
@@ -50,6 +37,7 @@ TOPIC_DRYER: str     = "home/appliance/dryer/state"
 TOPIC_HEARTBEAT: str = "home/system/heartbeat"
 TOPIC_CAR: str       = "home/car/state"
 TOPIC_SHELLY_BHT: str = "home/env/livingroom/ht/state"
+TOPIC_POWER: str     = "home/tibber/power"
 
 SHELLY_PREFIX: str   = "shelly-htg3"
 TOPIC_SHELLY: str    = f"{SHELLY_PREFIX}/#"
@@ -65,6 +53,7 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "shelly":    {"tC": None, "rh": None, "online": None,  "ts": None},
     "car":       {"battery": None, "range": None, "ts": None},
     "shelly_bht":  {"t": None, "rh": None, "ts": None},
+    "pulse_power":     {"power": None, "ts": None},
 }
 _lock = threading.Lock()
 
@@ -115,7 +104,8 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_SHELLY, qos=0)
     cli.subscribe(TOPIC_CAR, qos=0)
     cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
-    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_CAR}, {TOPIC_SHELLY_BHT}")
+    cli.subscribe(TOPIC_POWER, qos=0)
+    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_CAR}, {TOPIC_SHELLY_BHT}, {TOPIC_POWER}")
 
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
@@ -179,6 +169,17 @@ def _parse_shelly_bht(payload: str) -> None:
             if DEBUG:
                 print(f"[mqtt] shelly_bht json warn: {e}")
 
+def _parse_power(payload: str) -> None:
+    if payload.startswith("{") and payload.endswith("}"):
+        try:
+            d = json.loads(payload)
+            power = _to_float(d.get("power"))
+            _set("pulse_power", power=power)
+            return
+        except Exception as e:
+            if DEBUG:
+                print(f"[mqtt] power json warn: {e}")
+
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     payload = msg.payload.decode("utf-8", errors="replace").strip()
     if DEBUG:
@@ -235,6 +236,11 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     # Shelly BHT ----------------------------------------------------------
     if msg.topic == TOPIC_SHELLY_BHT:
         _parse_shelly_bht(payload)
+        return
+
+    # Power ---------------------------------------------------------------
+    if msg.topic == TOPIC_POWER:
+        _parse_power(payload)
         return
 
 

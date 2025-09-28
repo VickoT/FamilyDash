@@ -8,6 +8,7 @@ from components.washer_box import box as washer_box, compute as washer_compute
 from components.dryer_box import compute as dryer_compute
 from components.kia_box import kia_compute
 from components.bht_box import bht_compute
+from components.power_box import power_compute
 
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
@@ -46,7 +47,7 @@ app.layout = html.Div(
                 html.Div(id="kia-box", className="box kia-card"),
                 html.Div(id="bht-box", className="box climate-card"),
                 html.Div(id="washertime-box",className="tile"),
-                html.Div(id="sensor5-box",   className="tile"),
+                html.Div(id="power-box", className="box power-card"),
             ],
         ),
 
@@ -70,6 +71,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-dryer",  data={}),   # <-- NY
         dcc.Store(id="last-ts-kia", data={}),
         dcc.Store(id="last-ts-bht", data={}),
+        dcc.Store(id="last-ts-power", data={}),
     ],
 )
 
@@ -181,6 +183,17 @@ def cb_kia(_n, last_ts):
 )
 def cb_bht(_n, last_ts):
     return bht_compute(get_snapshot(), LOCAL_TZ, last_ts)
+
+# ---- Tibber Power -------------------------------------------------------
+@app.callback(
+    [Output("power-box", "children"),
+     Output("power-box", "className"),
+     Output("last-ts-power", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-power", "data"),
+)
+def cb_power(_n, last_ts):
+    return power_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
