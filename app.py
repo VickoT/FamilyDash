@@ -9,7 +9,7 @@ from components.dryer_box import compute as dryer_compute
 from components.kia_box import kia_compute
 from components.bht_box import bht_compute
 from components.power_box import power_compute
-
+from components.voc_box import voc_compute
 
 from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
 
@@ -40,14 +40,14 @@ app.layout = html.Div(
             id="widgets-box",
             className="widgets box",
             children=[
-                washer_box(),                         # befintlig tvättmaskinskomponent
+                washer_box(),
                 html.Div(id="dryer-box", className="box dryer-card"),
                 html.Div(id="shelly-box",    className="tile"),
-                html.Div(id="heartbeat-box", className="tile"),
-                html.Div(id="kia-box", className="box kia-card"),
                 html.Div(id="bht-box", className="box climate-card"),
-                html.Div(id="washertime-box",className="tile"),
+                html.Div(id="kia-box", className="box kia-card"),
                 html.Div(id="power-box", className="box power-card"),
+                html.Div(id="voc-box", className="box voc-card"),
+                html.Div(id="heartbeat-box", className="tile"),
             ],
         ),
 
@@ -68,10 +68,11 @@ app.layout = html.Div(
         dcc.Interval(id="tick", interval=5000, n_intervals=0),
         dcc.Store(id="last-ts-shelly", data={}),
         dcc.Store(id="last-ts-washer", data={}),
-        dcc.Store(id="last-ts-dryer",  data={}),   # <-- NY
+        dcc.Store(id="last-ts-dryer",  data={}),
         dcc.Store(id="last-ts-kia", data={}),
         dcc.Store(id="last-ts-bht", data={}),
         dcc.Store(id="last-ts-power", data={}),
+        dcc.Store(id="last-ts-voc", data={}),      # <-- NY
     ],
 )
 
@@ -128,7 +129,7 @@ def refresh_shelly(_n, last_ts):
     last_ts["shelly"] = ts
     return view, last_ts
 
-# ---- Torktumlare: ny tile -----------------------------------------------
+# ---- Dryer ---------------------------------------------------------------
 @app.callback(
     [Output("dryer-box", "children"),
      Output("dryer-box", "className"),
@@ -194,6 +195,17 @@ def cb_bht(_n, last_ts):
 )
 def cb_power(_n, last_ts):
     return power_compute(get_snapshot(), LOCAL_TZ, last_ts)
+
+# ---- VOC (airquality_raw) -----------------------------------------------
+@app.callback(
+    [Output("voc-box", "children"),
+     Output("voc-box", "className"),
+     Output("last-ts-voc", "data")],
+    Input("tick", "n_intervals"),
+    State("last-ts-voc", "data"),
+)
+def cb_voc(_n, last_ts):
+    return voc_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)

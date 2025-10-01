@@ -1,13 +1,11 @@
 # mqtt_subscriber.py
 # -------------------------------------------------------------------------
 # FamilyDash MQTT subscriber (fire-and-forget).
-#
 # Presence (LWT):
 #   - LWT (retained):  clients/<client_id>/status = offline
 #   - Vid lyckad connect: publish retained "online" på samma topic
 # -------------------------------------------------------------------------
 
-# ta bort?
 from __future__ import annotations
 
 import copy
@@ -21,7 +19,6 @@ import paho.mqtt.client as mqtt
 
 # --- Env -----------------------------------------------------------------
 def _get_port() -> int:
-    # Hantera ev. citattecken i .env ("1883")
     raw = os.getenv("MQTT_PORT", "1883")
     return int(str(raw).strip().strip('"').strip("'"))
 
@@ -32,42 +29,46 @@ MQTT_USER: Optional[str] = os.getenv("MQTT_USER") or None
 MQTT_PASS: Optional[str] = os.getenv("MQTT_PASS") or None
 MQTT_CLIENT: str         = os.getenv("MQTT_CLIENT", "familydash-default")
 
-TOPIC_WASHER: str    = "home/appliance/washer/state"
-TOPIC_DRYER: str     = "home/appliance/dryer/state"
-TOPIC_HEARTBEAT: str = "home/system/heartbeat"
-TOPIC_CAR: str       = "home/car/state"
-TOPIC_SHELLY_BHT: str = "home/env/livingroom/ht/state"
-TOPIC_POWER: str     = "home/tibber/power"
+TOPIC_WASHER: str        = "home/appliance/washer/state"
+TOPIC_DRYER: str         = "home/appliance/dryer/state"
+TOPIC_HEARTBEAT: str     = "home/system/heartbeat"
+TOPIC_CAR: str           = "home/car/state"
+TOPIC_SHELLY_BHT: str    = "home/env/livingroom/ht/state"
+TOPIC_POWER: str         = "home/tibber/power"
 
-SHELLY_PREFIX: str   = "shelly-htg3"
-TOPIC_SHELLY: str    = f"{SHELLY_PREFIX}/#"
+# Air quality (rå JSON från Pico)
+TOPIC_AIRQUALITY_RAW: str = "home/env/livingroom/airquality_raw"
 
+SHELLY_PREFIX: str       = "shelly-htg3"
+TOPIC_SHELLY: str        = f"{SHELLY_PREFIX}/#"
 
-DEBUG: bool          = True
+DEBUG: bool              = True
 
 # --- Shared snapshot -----------------------------------------------------
 _snapshot: Dict[str, Dict[str, Any]] = {
-    "washer":    {"status": None, "time_to_end_min": None, "ts": None},
-    "dryer":     {"status": None, "time_left": None,       "ts": None},
-    "heartbeat": {"last": None,   "ts": None},
-    "shelly":    {"tC": None, "rh": None, "online": None,  "ts": None},
-    "car":       {"battery": None, "range": None, "ts": None},
-    "shelly_bht":  {"t": None, "rh": None, "ts": None},
-    "pulse_power":     {"power": None, "ts": None},
+    "washer":       {"status": None, "time_to_end_min": None, "ts": None},
+    "dryer":        {"status": None, "time_left": None,       "ts": None},
+    "heartbeat":    {"last": None,   "ts": None},
+    "shelly":       {"tC": None, "rh": None, "online": None,  "ts": None},
+    "car":          {"battery": None, "range": None,          "ts": None},
+    "shelly_bht":   {"t": None, "rh": None,                   "ts": None},
+    "pulse_power":  {"power": None,                           "ts": None},
+    "airquality_raw": {
+        "eco2_ppm": None, "tvoc_ppb": None, "aqi": None,
+        "temperature_c": None, "pressure_hpa": None, "humidity_pct": None,
+        "ts": None
+    },
 }
 _lock = threading.Lock()
-
 
 def get_snapshot() -> Dict[str, Dict[str, Any]]:
     """Return a deep copy of the latest values (thread-safe)."""
     with _lock:
         return copy.deepcopy(_snapshot)
 
-
 # --- Helpers -------------------------------------------------------------
 def _now() -> int:
     return int(time.time())
-
 
 def _to_int(v: Any) -> Optional[int]:
     try:
@@ -75,25 +76,21 @@ def _to_int(v: Any) -> Optional[int]:
     except Exception:
         return None
 
-
 def _to_float(v: Any) -> Optional[float]:
     try:
         return float(str(v).strip())
     except Exception:
         return None
 
-
 def _set(section: str, **kwargs: Any) -> None:
     with _lock:
         _snapshot[section].update({k: v for k, v in kwargs.items() if v is not None})
         _snapshot[section]["ts"] = _now()
 
-
 # --- MQTT callbacks (Paho v2) -------------------------------------------
 def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
                 reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
     print(f"[mqtt] connected reason_code={reason_code}, id={MQTT_CLIENT}")
-    # Birth (announce online, retained) efter bekräftad uppkoppling
     status_topic = f"clients/{MQTT_CLIENT}/status"
     cli.publish(status_topic, payload="online", qos=1, retain=True)
 
@@ -105,23 +102,18 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_CAR, qos=0)
     cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
     cli.subscribe(TOPIC_POWER, qos=0)
-    print(f"[mqtt] subscribed: {TOPIC_WASHER}, {TOPIC_DRYER}, {TOPIC_HEARTBEAT}, {TOPIC_SHELLY}, {TOPIC_CAR}, {TOPIC_SHELLY_BHT}, {TOPIC_POWER}")
+    cli.subscribe(TOPIC_AIRQUALITY_RAW, qos=0)
+    print(f"[mqtt] subscribed:",
+          TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
+          TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW)
 
-
-def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
+def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
+                   _props: mqtt.Properties | None = None) -> None:
     print(f"[mqtt] disconnected reason_code={reason_code}, id={MQTT_CLIENT}")
-    # LWT sköter 'offline' vid oväntad disconnect. Vid snygg nedstängning kan man vilja publicera 'offline' här.
-    # status_topic = f"clients/{MQTT_CLIENT}/status"
-    # cli.publish(status_topic, payload="offline", qos=1, retain=True)
-
+    # LWT hanterar 'offline' vid oväntad disconnect.
 
 def _parse_shelly(topic: str, payload: str) -> None:
-    """
-    Shelly Gen3 tolerant parsing:
-    - '<prefix>/online' -> 'true'/'false'
-    - JSON med nycklar 'tC' och 'rh'
-    - Plain numbers på subtopics som .../temperature, .../humidity
-    """
+    # Shelly Gen3 tolerant parsing
     if topic.endswith("/online"):
         _set("shelly", online=(payload.strip().lower() == "true"))
         return
@@ -139,11 +131,9 @@ def _parse_shelly(topic: str, payload: str) -> None:
 
     low = topic.lower()
     if any(k in low for k in ("/temp", "/temperature")):
-        _set("shelly", tC=_to_float(payload))
-        return
+        _set("shelly", tC=_to_float(payload)); return
     if any(k in low for k in ("/hum", "/humidity", "/rh")):
-        _set("shelly", rh=_to_float(payload))
-        return
+        _set("shelly", rh=_to_float(payload)); return
 
 def _parse_car(payload: str) -> None:
     if payload.startswith("{") and payload.endswith("}"):
@@ -152,7 +142,6 @@ def _parse_car(payload: str) -> None:
             battery = _to_int(d.get("battery"))
             range_km = _to_int(d.get("range"))
             _set("car", battery=battery, range=range_km)
-            return
         except Exception as e:
             if DEBUG:
                 print(f"[mqtt] car json warn: {e}")
@@ -164,7 +153,6 @@ def _parse_shelly_bht(payload: str) -> None:
             t = _to_float(d.get("t"))
             rh = _to_float(d.get("rh"))
             _set("shelly_bht", t=t, rh=rh)
-            return
         except Exception as e:
             if DEBUG:
                 print(f"[mqtt] shelly_bht json warn: {e}")
@@ -175,81 +163,91 @@ def _parse_power(payload: str) -> None:
             d = json.loads(payload)
             power = _to_float(d.get("power"))
             _set("pulse_power", power=power)
-            return
         except Exception as e:
             if DEBUG:
                 print(f"[mqtt] power json warn: {e}")
+
+def _parse_airquality_raw(payload: str) -> None:
+    """Parsa JSON från home/env/livingroom/airquality_raw och uppdatera snapshot."""
+    if not (payload.startswith("{") and payload.endswith("}")):
+        return
+    try:
+        d = json.loads(payload)
+        _set("airquality_raw",
+             eco2_ppm=_to_int(d.get("eco2_ppm")),
+             tvoc_ppb=_to_int(d.get("tvoc_ppb")),
+             aqi=_to_int(d.get("aqi")),
+             temperature_c=_to_float(d.get("temperature_c")),
+             pressure_hpa=_to_float(d.get("pressure_hpa")),
+             humidity_pct=_to_float(d.get("humidity_pct")))
+    except Exception as e:
+        if DEBUG:
+            print(f"[mqtt] airquality json warn: {e}")
+
 
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     payload = msg.payload.decode("utf-8", errors="replace").strip()
     if DEBUG:
         print(f"[mqtt] {msg.topic} <- {payload}")
 
-    # Washer --------------------------------------------------------------
+    # Washer
     if msg.topic == TOPIC_WASHER:
-        status = None
-        minutes = None
+        status = None; minutes = None
         if payload.startswith("{") and payload.endswith("}"):
             try:
                 data = json.loads(payload)
                 status = data.get("status")
                 minutes = data.get("time_to_end_min")
             except Exception as e:
-                if DEBUG:
-                    print(f"[mqtt] washer json warn: {e}")
+                if DEBUG: print(f"[mqtt] washer json warn: {e}")
         else:
             minutes = payload
-        _set("washer", status=status, time_to_end_min=_to_int(minutes))
-        return
+        _set("washer", status=status, time_to_end_min=_to_int(minutes)); return
 
-    # Dryer ---------------------------------------------------------------
+    # Dryer
     if msg.topic == TOPIC_DRYER:
-        status = None
-        time_left = None
+        status = None; time_left = None
         if payload.startswith("{") and payload.endswith("}"):
             try:
                 data = json.loads(payload)
                 status = data.get("status")
                 time_left = data.get("time_left")
             except Exception as e:
-                if DEBUG:
-                    print(f"[mqtt] dryer json warn: {e}")
+                if DEBUG: print(f"[mqtt] dryer json warn: {e}")
         else:
             time_left = payload
-        _set("dryer", status=status, time_left=_to_int(time_left))
-        return
+        _set("dryer", status=status, time_left=_to_int(time_left)); return
 
-    # Heartbeat -----------------------------------------------------------
+    # Heartbeat
     if msg.topic == TOPIC_HEARTBEAT:
-        _set("heartbeat", last=payload)
-        return
+        _set("heartbeat", last=payload); return
 
-    # Shelly --------------------------------------------------------------
+    # Shelly
     if msg.topic.startswith(SHELLY_PREFIX):
-        _parse_shelly(msg.topic, payload)
-        return
-    # Car ---------------------------------------------------------------
+        _parse_shelly(msg.topic, payload); return
+
+    # Car
     if msg.topic == TOPIC_CAR:
-        _parse_car(payload)
-        return
+        _parse_car(payload); return
 
-    # Shelly BHT ----------------------------------------------------------
+    # Shelly BHT
     if msg.topic == TOPIC_SHELLY_BHT:
-        _parse_shelly_bht(payload)
-        return
+        _parse_shelly_bht(payload); return
 
-    # Power ---------------------------------------------------------------
+    # Power
     if msg.topic == TOPIC_POWER:
-        _parse_power(payload)
-        return
+        _parse_power(payload); return
+
+        # Air quality (rå JSON från Pico)
+    if msg.topic == TOPIC_AIRQUALITY_RAW:
+        _parse_airquality_raw(payload); return
 
 
 # --- Start (idempotent, bakgrundstråd) ----------------------------------
 def start() -> None:
-    """Start the MQTT client in a background daemon thread (idempotent)."""
+    """Start the MQTT client i en bakgrundstråd (idempotent)."""
     if not MQTT_ENABLE:
-        print("[mqtt] disabled (MQTT_ENABLE=0)")
-        return
+        print("[mqtt] disabled (MQTT_ENABLE=0)"); return
     if getattr(start, "_started", False):
         return
     start._started = True  # type: ignore[attr-defined]
@@ -257,10 +255,7 @@ def start() -> None:
     def _loop() -> None:
         try:
             print(f"[mqtt] host={MQTT_HOST} port={MQTT_PORT} id={MQTT_CLIENT} user={'set' if MQTT_USER else 'none'}")
-            cli = mqtt.Client(
-                mqtt.CallbackAPIVersion.VERSION2,
-                client_id=MQTT_CLIENT,
-            )
+            cli = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=MQTT_CLIENT)
             if MQTT_USER:
                 cli.username_pw_set(MQTT_USER, MQTT_PASS)
 
