@@ -34,7 +34,7 @@ def kia_compute(snapshot, local_tz, last_ts):
     view = html.Div([
         dcc.Markdown(KIA_SVG, dangerously_allow_html=True),
         html.Div([html.Span("🔋 "), html.Span(battery_txt)], className="value"),
-        html.Div([html.Span("🛣️ "), html.Span(range_txt)],   className="value"),
+        html.Div([html.Span("🚙 "), html.Span(range_txt)],   className="value"),
         html.Div(ts_str, className="kv-ts"),
     ])
 

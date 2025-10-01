@@ -41,6 +41,16 @@ html, body{
 *::after { box-sizing: border-box; }
 
 /**********************************************************
+ * Globala textklasser
+ **********************************************************/
+.timestamp {
+  font-size: .8rem;
+  opacity: .65;
+  margin-top: 4px;
+  display: block;
+}
+
+/**********************************************************
  * 2) Top-level grid
  **********************************************************/
 .app-wrapper{
@@ -224,6 +234,52 @@ html, body{
   font-size: .9rem;
   opacity: .7;
 }
+
+/**********************************************************
+ * 6e) VOC – luftkvalitet
+ **********************************************************/
+
+.voc-card{
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  color: var(--fg-text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  padding:1px;
+}
+
+.voc-card .title{
+  font-size:.95rem;
+  opacity:.85;
+  text-align:center;
+}
+.voc-card .value{
+  font-size:1.6rem;
+  font-weight:700;
+  text-align:center;
+  /* ingen färg här – styrs av iaq-klasserna nedan */
+}
+.voc-card .emoji{
+  font-size:3rem;
+  line-height:1;
+  text-align:center;
+}
+
+.voc-card .timestamp{
+  font-size:.8rem;
+  opacity:.65;
+  margin-top:4px;
+}
+
+/* IAQ-färger för just ppb-värdet */
+.voc-card .value.iaq-1 { color:#4CAF50; }  /* grön */
+.voc-card .value.iaq-2 { color:#FFEB3B; }  /* gul */
+.voc-card .value.iaq-3 { color:#FF9800; }  /* orange */
+.voc-card .value.iaq-4 { color:#F44336; }  /* röd */
+.voc-card .value.iaq-5 { color:#B71C1C; }  /* mörkröd */
 
 /**********************************************************
  * 7) Tibber
