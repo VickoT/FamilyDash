@@ -37,7 +37,7 @@ SVG_STRING = r"""
 </svg>
 """
 
-def compute(snapshot: dict | None, tz, last_ts: dict | None):
+def dryer_compute(snapshot: dict | None, tz, last_ts: dict | None):
     """
     snapshot['dryer'] = {
       'ts': <epoch>,

@@ -4,8 +4,8 @@ from dash.dependencies import Input, Output, State
 from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
-from components.washer_box import box as washer_box, compute as washer_compute
-from components.dryer_box import compute as dryer_compute
+from components.washer_box import washer_box, washer_compute
+from components.dryer_box import dryer_compute
 from components.kia_box import kia_compute
 from components.bht_box import bht_compute
 from components.power_box import power_compute
@@ -41,6 +41,7 @@ app.layout = html.Div(
             className="widgets box",
             children=[
                 washer_box(),
+                #html.Div(id="washer-box", className="box washer-card"),
                 html.Div(id="dryer-box", className="box dryer-card"),
                 html.Div(id="shelly-box",    className="tile"),
                 html.Div(id="bht-box", className="box climate-card"),

@@ -24,14 +24,14 @@ SVG_STRING = r"""
 """
 
 # ---- Publikt API ---------------------------------------------------------
-def box():
+def washer_box():
     """Wrapper för layouten."""
     # Starta med neutral tile tills första MQTT kommer
     children = _placeholder_children()
     klass = "box appliance-card washer-card"
     return html.Div(id="washer-box", className=klass, children=children)
 
-def compute(snapshot: dict | None, tz, last_ts: dict | None):
+def washer_compute(snapshot: dict | None, tz, last_ts: dict | None):
     """
     snapshot['washer'] = {'ts': <epoch>, 'time_to_end_min': <int|float>}
     Returnerar (children|no_update, className|no_update, updated_last_ts)
