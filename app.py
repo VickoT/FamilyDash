@@ -4,7 +4,7 @@ from dash.dependencies import Input, Output, State
 from components.calendar_box import calendar_box
 from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
-from components.washer_box import washer_box, washer_compute
+from components.washer_box import  washer_compute
 from components.dryer_box import dryer_compute
 from components.kia_box import kia_compute
 from components.bht_box import bht_compute
@@ -28,7 +28,10 @@ except Exception as e:
     print(f"Initial fetch failed: {e}")
 
 app = Dash(__name__)
-mqtt_start()   # starta MQTT-subscribe i bakgrunden
+
+# Starta MQTT-subscribe i bakgrunden (threads), och skapar snapshots med
+# senaste värdena från MQTT, en fryst bild av senaste mqtt-läget.
+mqtt_start()
 
 app.layout = html.Div(
     className="app-wrapper",
@@ -40,14 +43,13 @@ app.layout = html.Div(
             id="widgets-box",
             className="widgets box",
             children=[
-                washer_box(),
-                #html.Div(id="washer-box", className="box washer-card"),
-                html.Div(id="dryer-box", className="box dryer-card"),
-                html.Div(id="shelly-box",    className="tile"),
-                html.Div(id="bht-box", className="box climate-card"),
-                html.Div(id="kia-box", className="box kia-card"),
-                html.Div(id="power-box", className="box power-card"),
-                html.Div(id="voc-box", className="box voc-card"),
+                html.Div(id="washer-box",   className="box washer-card"),
+                html.Div(id="dryer-box",    className="box dryer-card"),
+                html.Div(id="shelly-box",   className="tile"),
+                html.Div(id="bht-box",      className="box climate-card"),
+                html.Div(id="kia-box",      className="box kia-card"),
+                html.Div(id="power-box",    className="box power-card"),
+                html.Div(id="voc-box",      className="box voc-card"),
                 html.Div(id="heartbeat-box", className="tile"),
             ],
         ),
@@ -64,28 +66,44 @@ app.layout = html.Div(
             ),
         ),
 
-        # Intervaller & state
+        # Två olika intervaller för callback-anrop:
+        # 2 minuter för fetch av tibber, kalender, väder
+        # 5 sekunder för uppdatering av widgets
         dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0),
         dcc.Interval(id="tick", interval=5000, n_intervals=0),
+        # Store för att hålla reda på senaste timestamps för olika widgets,
         dcc.Store(id="last-ts-shelly", data={}),
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),
         dcc.Store(id="last-ts-kia", data={}),
         dcc.Store(id="last-ts-bht", data={}),
         dcc.Store(id="last-ts-power", data={}),
-        dcc.Store(id="last-ts-voc", data={}),      # <-- NY
+        dcc.Store(id="last-ts-voc", data={}),
     ],
 )
 
-# ---------- Callbacks ----------
-@app.callback(Output("calendar-box", "children"), Input("interval-component", "n_intervals"))
+# ---- CALLBACKS ----------------------------------------------------------
+
+#Callback syntax:
+#    Output - vad som uppdateras. Kan vara flera outputs i en lista.
+#    Input  - vad som triggar uppdateringen. Kan vara flera inputs i en lista.
+#    State - vad som är "read-only" data som skickas in i callbacken.
+
+# ---- Calendar -----------------------------------------------------------
+@app.callback(
+        [Output("calendar-box", "children")],
+        Input("interval-component", "n_intervals"))
 def cb_calendar(_):
-    return calendar_box()
+    return (calendar_box(),)
 
-@app.callback(Output("weather-box", "children"), Input("interval-component", "n_intervals"))
+# ---- Weather --------------------------------------------------------------
+@app.callback(
+        [Output("weather-box", "children")],
+        Input("interval-component", "n_intervals"))
 def cb_weather(_):
-    return weather_box()
+    return (weather_box(),)
 
+# ---- Washer --------------------------------------------------------------
 @app.callback(
     [Output("washer-box", "children"),
      Output("washer-box", "className"),
@@ -96,6 +114,7 @@ def cb_weather(_):
 def cb_washer(_n, last_ts):
     return washer_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
+# ---- Tibber graph --------------------------------------------------------
 @app.callback(Output("tibber-graph", "figure"), Input("interval-component", "n_intervals"))
 def cb_tibber(_):
     return make_tibber_figure()
