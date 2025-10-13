@@ -29,40 +29,48 @@ MQTT_USER: Optional[str] = os.getenv("MQTT_USER") or None
 MQTT_PASS: Optional[str] = os.getenv("MQTT_PASS") or None
 MQTT_CLIENT: str         = os.getenv("MQTT_CLIENT", "familydash-default")
 
-TOPIC_WASHER: str        = "home/appliance/washer/state"
-TOPIC_DRYER: str         = "home/appliance/dryer/state"
-TOPIC_HEARTBEAT: str     = "home/system/heartbeat"
-TOPIC_CAR: str           = "home/car/state"
-TOPIC_SHELLY_BHT: str    = "home/env/livingroom/ht/state"
-TOPIC_POWER: str         = "home/tibber/power"
+# --- Topics --------------------------------------------------------------
+TOPIC_CALENDAR_FAM: str   = "home/calendar/familie/next7d"
+TOPIC_CALENDAR_BDAY: str  = "home/calendar/fodelsedagar/next370d"
+
+TOPIC_WASHER: str         = "home/appliance/washer/state"
+TOPIC_DRYER: str          = "home/appliance/dryer/state"
+TOPIC_HEARTBEAT: str      = "home/system/heartbeat"
+TOPIC_CAR: str            = "home/car/state"
+TOPIC_SHELLY_BHT: str     = "home/env/livingroom/ht/state"
+TOPIC_POWER: str          = "home/tibber/power"
 
 # Air quality (rå JSON från Pico)
 TOPIC_AIRQUALITY_RAW: str = "home/env/livingroom/airquality_raw"
 
-SHELLY_PREFIX: str       = "shelly-htg3"
-TOPIC_SHELLY: str        = f"{SHELLY_PREFIX}/#"
+SHELLY_PREFIX: str        = "shelly-htg3"
+TOPIC_SHELLY: str         = f"{SHELLY_PREFIX}/#"
 
-DEBUG: bool              = True
+DEBUG: bool               = True
 
 # --- Shared snapshot -----------------------------------------------------
 _snapshot: Dict[str, Dict[str, Any]] = {
+    "calendar": {
+        "familie":       {"events_next7d": None,   "ts": None},
+        "fodelsedagar":  {"events_next370d": None, "ts": None},
+    },
     "washer":       {"status": None, "time_to_end_min": None, "ts": None},
-    "dryer":        {"status": None, "time_left": None,       "ts": None},
-    "heartbeat":    {"last": None,   "ts": None},
-    "shelly":       {"tC": None, "rh": None, "online": None,  "ts": None},
-    "car":          {"battery": None, "range": None,          "ts": None},
-    "shelly_bht":   {"t": None, "rh": None,                   "ts": None},
-    "pulse_power":  {"power": None,                           "ts": None},
+    "dryer":        {"status": None, "time_left": None, "ts": None},
+    "heartbeat":    {"last": None, "ts": None},
+    "shelly":       {"tC": None, "rh": None, "online": None, "ts": None},
+    "car":          {"battery": None, "range": None, "ts": None},
+    "shelly_bht":   {"t": None, "rh": None, "ts": None},
+    "pulse_power":  {"power": None, "ts": None},
     "airquality_raw": {
         "eco2_ppm": None, "tvoc_ppb": None, "aqi": None,
         "temperature_c": None, "pressure_hpa": None, "humidity_pct": None,
         "ts": None
     },
 }
+
 _lock = threading.Lock()
 
 def get_snapshot() -> Dict[str, Dict[str, Any]]:
-    """Return a deep copy of the latest values (thread-safe)."""
     with _lock:
         return copy.deepcopy(_snapshot)
 
@@ -82,10 +90,107 @@ def _to_float(v: Any) -> Optional[float]:
     except Exception:
         return None
 
+def _json_payload(payload: str) -> Optional[dict]:
+    if not (payload.startswith("{") and payload.endswith("}")):
+        return None
+    try:
+        return json.loads(payload)
+    except Exception:
+        return None
+
 def _set(section: str, **kwargs: Any) -> None:
     with _lock:
         _snapshot[section].update({k: v for k, v in kwargs.items() if v is not None})
         _snapshot[section]["ts"] = _now()
+
+# --- Parsers -------------------------------------------------------------
+# Parsers for various topics. Each parser extracts relevant fields from the
+# payload (which may be JSON or plain text) and updates the shared _snapshot.
+
+def _parse_calendar_fam(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    events = d.get("events", [])
+    with _lock:
+        _snapshot["calendar"]["familie"]["events_next7d"] = events
+        _snapshot["calendar"]["familie"]["ts"] = _now()
+
+def _parse_calendar_bday(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    events = d.get("events", [])
+    with _lock:
+        _snapshot["calendar"]["fodelsedagar"]["events_next370d"] = events
+        _snapshot["calendar"]["fodelsedagar"]["ts"] = _now()
+
+def _parse_washer(payload: str) -> None:
+    status = None; minutes = None
+    d = _json_payload(payload)
+    if isinstance(d, dict):
+        status = d.get("status")
+        minutes = d.get("time_to_end_min")
+    else:
+        minutes = payload
+    _set("washer", status=status, time_to_end_min=_to_int(minutes))
+
+def _parse_dryer(payload: str) -> None:
+    status = None; time_left = None
+    d = _json_payload(payload)
+    if isinstance(d, dict):
+        status = d.get("status")
+        time_left = d.get("time_left")
+    else:
+        time_left = payload
+    _set("dryer", status=status, time_left=_to_int(time_left))
+
+def _parse_heartbeat(payload: str) -> None:
+    _set("heartbeat", last=payload)
+
+def _parse_shelly(topic: str, payload: str) -> None:
+    if topic.endswith("/online"):
+        _set("shelly", online=(payload.strip().lower() == "true"))
+        return
+    d = _json_payload(payload)
+    if isinstance(d, dict):
+        tC = _to_float(d.get("tC") or d.get("temperature"))
+        rh = _to_float(d.get("rh") or d.get("humidity") or d.get("hum"))
+        _set("shelly", tC=tC, rh=rh)
+        return
+    low = topic.lower()
+    if any(k in low for k in ("/temp", "/temperature")):
+        _set("shelly", tC=_to_float(payload)); return
+    if any(k in low for k in ("/hum", "/humidity", "/rh")):
+        _set("shelly", rh=_to_float(payload)); return
+
+def _parse_car(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set("car",
+         battery=_to_int(d.get("battery")),
+         range=_to_int(d.get("range")))
+
+def _parse_shelly_bht(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set("shelly_bht",
+         t=_to_float(d.get("t")),
+         rh=_to_float(d.get("rh")))
+
+def _parse_power(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set("pulse_power", power=_to_float(d.get("power")))
+
+def _parse_airquality_raw(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set("airquality_raw",
+         eco2_ppm=_to_int(d.get("eco2_ppm")),
+         tvoc_ppb=_to_int(d.get("tvoc_ppb")),
+         aqi=_to_int(d.get("aqi")),
+         temperature_c=_to_float(d.get("temperature_c")),
+         pressure_hpa=_to_float(d.get("pressure_hpa")),
+         humidity_pct=_to_float(d.get("humidity_pct")))
 
 # --- MQTT callbacks (Paho v2) -------------------------------------------
 def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
@@ -94,7 +199,6 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     status_topic = f"clients/{MQTT_CLIENT}/status"
     cli.publish(status_topic, payload="online", qos=1, retain=True)
 
-    # Subscriptions
     cli.subscribe(TOPIC_WASHER, qos=0)
     cli.subscribe(TOPIC_DRYER, qos=0)
     cli.subscribe(TOPIC_HEARTBEAT, qos=0)
@@ -103,149 +207,36 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
     cli.subscribe(TOPIC_POWER, qos=0)
     cli.subscribe(TOPIC_AIRQUALITY_RAW, qos=0)
-    print(f"[mqtt] subscribed:",
+    cli.subscribe(TOPIC_CALENDAR_FAM, qos=1)
+    cli.subscribe(TOPIC_CALENDAR_BDAY, qos=1)
+
+    print("[mqtt] subscribed:",
           TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
-          TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW)
+          TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
+          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY)
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
                    _props: mqtt.Properties | None = None) -> None:
     print(f"[mqtt] disconnected reason_code={reason_code}, id={MQTT_CLIENT}")
-    # LWT hanterar 'offline' vid oväntad disconnect.
-
-def _parse_shelly(topic: str, payload: str) -> None:
-    # Shelly Gen3 tolerant parsing
-    if topic.endswith("/online"):
-        _set("shelly", online=(payload.strip().lower() == "true"))
-        return
-
-    if payload.startswith("{") and payload.endswith("}"):
-        try:
-            d = json.loads(payload)
-            tC = _to_float(d.get("tC") or d.get("temperature"))
-            rh = _to_float(d.get("rh") or d.get("humidity") or d.get("hum"))
-            _set("shelly", tC=tC, rh=rh)
-            return
-        except Exception as e:
-            if DEBUG:
-                print(f"[mqtt] shelly json warn: {e}")
-
-    low = topic.lower()
-    if any(k in low for k in ("/temp", "/temperature")):
-        _set("shelly", tC=_to_float(payload)); return
-    if any(k in low for k in ("/hum", "/humidity", "/rh")):
-        _set("shelly", rh=_to_float(payload)); return
-
-def _parse_car(payload: str) -> None:
-    if payload.startswith("{") and payload.endswith("}"):
-        try:
-            d = json.loads(payload)
-            battery = _to_int(d.get("battery"))
-            range_km = _to_int(d.get("range"))
-            _set("car", battery=battery, range=range_km)
-        except Exception as e:
-            if DEBUG:
-                print(f"[mqtt] car json warn: {e}")
-
-def _parse_shelly_bht(payload: str) -> None:
-    if payload.startswith("{") and payload.endswith("}"):
-        try:
-            d = json.loads(payload)
-            t = _to_float(d.get("t"))
-            rh = _to_float(d.get("rh"))
-            _set("shelly_bht", t=t, rh=rh)
-        except Exception as e:
-            if DEBUG:
-                print(f"[mqtt] shelly_bht json warn: {e}")
-
-def _parse_power(payload: str) -> None:
-    if payload.startswith("{") and payload.endswith("}"):
-        try:
-            d = json.loads(payload)
-            power = _to_float(d.get("power"))
-            _set("pulse_power", power=power)
-        except Exception as e:
-            if DEBUG:
-                print(f"[mqtt] power json warn: {e}")
-
-def _parse_airquality_raw(payload: str) -> None:
-    """Parsa JSON från home/env/livingroom/airquality_raw och uppdatera snapshot."""
-    if not (payload.startswith("{") and payload.endswith("}")):
-        return
-    try:
-        d = json.loads(payload)
-        _set("airquality_raw",
-             eco2_ppm=_to_int(d.get("eco2_ppm")),
-             tvoc_ppb=_to_int(d.get("tvoc_ppb")),
-             aqi=_to_int(d.get("aqi")),
-             temperature_c=_to_float(d.get("temperature_c")),
-             pressure_hpa=_to_float(d.get("pressure_hpa")),
-             humidity_pct=_to_float(d.get("humidity_pct")))
-    except Exception as e:
-        if DEBUG:
-            print(f"[mqtt] airquality json warn: {e}")
-
 
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     payload = msg.payload.decode("utf-8", errors="replace").strip()
     if DEBUG:
         print(f"[mqtt] {msg.topic} <- {payload}")
 
-    # Washer
-    if msg.topic == TOPIC_WASHER:
-        status = None; minutes = None
-        if payload.startswith("{") and payload.endswith("}"):
-            try:
-                data = json.loads(payload)
-                status = data.get("status")
-                minutes = data.get("time_to_end_min")
-            except Exception as e:
-                if DEBUG: print(f"[mqtt] washer json warn: {e}")
-        else:
-            minutes = payload
-        _set("washer", status=status, time_to_end_min=_to_int(minutes)); return
-
-    # Dryer
-    if msg.topic == TOPIC_DRYER:
-        status = None; time_left = None
-        if payload.startswith("{") and payload.endswith("}"):
-            try:
-                data = json.loads(payload)
-                status = data.get("status")
-                time_left = data.get("time_left")
-            except Exception as e:
-                if DEBUG: print(f"[mqtt] dryer json warn: {e}")
-        else:
-            time_left = payload
-        _set("dryer", status=status, time_left=_to_int(time_left)); return
-
-    # Heartbeat
-    if msg.topic == TOPIC_HEARTBEAT:
-        _set("heartbeat", last=payload); return
-
-    # Shelly
-    if msg.topic.startswith(SHELLY_PREFIX):
-        _parse_shelly(msg.topic, payload); return
-
-    # Car
-    if msg.topic == TOPIC_CAR:
-        _parse_car(payload); return
-
-    # Shelly BHT
-    if msg.topic == TOPIC_SHELLY_BHT:
-        _parse_shelly_bht(payload); return
-
-    # Power
-    if msg.topic == TOPIC_POWER:
-        _parse_power(payload); return
-
-        # Air quality (rå JSON från Pico)
-    if msg.topic == TOPIC_AIRQUALITY_RAW:
-        _parse_airquality_raw(payload); return
-
+    if msg.topic == TOPIC_CALENDAR_FAM:     _parse_calendar_fam(payload);  return
+    if msg.topic == TOPIC_CALENDAR_BDAY:    _parse_calendar_bday(payload); return
+    if msg.topic == TOPIC_WASHER:           _parse_washer(payload);        return
+    if msg.topic == TOPIC_DRYER:            _parse_dryer(payload);         return
+    if msg.topic == TOPIC_HEARTBEAT:        _parse_heartbeat(payload);     return
+    if msg.topic.startswith(SHELLY_PREFIX): _parse_shelly(msg.topic, payload); return
+    if msg.topic == TOPIC_CAR:              _parse_car(payload);           return
+    if msg.topic == TOPIC_SHELLY_BHT:       _parse_shelly_bht(payload);    return
+    if msg.topic == TOPIC_POWER:            _parse_power(payload);         return
+    if msg.topic == TOPIC_AIRQUALITY_RAW:   _parse_airquality_raw(payload);return
 
 # --- Start (idempotent, bakgrundstråd) ----------------------------------
 def start() -> None:
-    """Start the MQTT client i en bakgrundstråd (idempotent)."""
     if not MQTT_ENABLE:
         print("[mqtt] disabled (MQTT_ENABLE=0)"); return
     if getattr(start, "_started", False):
@@ -259,7 +250,6 @@ def start() -> None:
             if MQTT_USER:
                 cli.username_pw_set(MQTT_USER, MQTT_PASS)
 
-            # Presence (LWT retained 'offline')
             status_topic = f"clients/{MQTT_CLIENT}/status"
             cli.will_set(status_topic, payload="offline", qos=1, retain=True)
 
