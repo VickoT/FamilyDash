@@ -7,9 +7,6 @@ TZ=Europe/Stockholm
 30,45 12 * * * root cd /app && /usr/local/bin/python fetch/fetch_tibber.py > /app/data/logs/fetch_tibber.log 2>&1
 0,15,30,45,59 13 * * * root cd /app && /usr/local/bin/python fetch/fetch_tibber.py > /app/data/logs/fetch_tibber.log 2>&1
 
-# Calendar every 5 minutes
-*/5 * * * * root cd /app && /usr/local/bin/python fetch/fetch_calendar.py > /app/data/logs/fetch_calendar.log 2>&1
-
 # Washer effect every 1 minute
 * * * * * root cd /app && /usr/local/bin/python fetch/fetch_washer.py > /app/data/logs/fetch_washer.log 2>&1
 

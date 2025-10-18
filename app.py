@@ -11,7 +11,7 @@ from components.bht_box import bht_compute
 from components.power_box import power_compute
 from components.voc_box import voc_compute
 
-from fetch import fetch_tibber, fetch_calendar, fetch_weather, fetch_washer
+from fetch import fetch_tibber, fetch_weather, fetch_washer
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
@@ -23,7 +23,7 @@ LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
 
 # Initiala fetch (best effort)
 try:
-    fetch_tibber.main(); fetch_calendar.main(); fetch_weather.main(); fetch_washer.main()
+    fetch_tibber.main(); fetch_weather.main(); fetch_washer.main()
 except Exception as e:
     print(f"Initial fetch failed: {e}")
 
