@@ -43,6 +43,9 @@ TOPIC_POWER: str          = "home/tibber/power"
 # Air quality (rå JSON från Pico)
 TOPIC_AIRQUALITY_RAW: str = "home/env/livingroom/airquality_raw"
 
+# Weather (från din HA-automation)
+TOPIC_WEATHER: str        = "home/weather"
+
 SHELLY_PREFIX: str        = "shelly-htg3"
 TOPIC_SHELLY: str         = f"{SHELLY_PREFIX}/#"
 
@@ -65,6 +68,12 @@ _snapshot: Dict[str, Dict[str, Any]] = {
         "eco2_ppm": None, "tvoc_ppb": None, "aqi": None,
         "temperature_c": None, "pressure_hpa": None, "humidity_pct": None,
         "ts": None
+    },
+    "weather": {
+        "condition": None, "temperature": None,
+        "wind_speed": None, "wind_bearing": None,
+        "tmax": None, "precip_6h": None, "precip_prob_max": None,
+        "uv_max": None, "timestamp": None, "ts": None
     },
 }
 
@@ -91,10 +100,13 @@ def _to_float(v: Any) -> Optional[float]:
         return None
 
 def _json_payload(payload: str) -> Optional[dict]:
-    if not (payload.startswith("{") and payload.endswith("}")):
+    if not payload:
+        return None
+    s = payload.strip()
+    if not (s.startswith("{") and s.endswith("}")):
         return None
     try:
-        return json.loads(payload)
+        return json.loads(s)
     except Exception:
         return None
 
@@ -192,6 +204,24 @@ def _parse_airquality_raw(payload: str) -> None:
          pressure_hpa=_to_float(d.get("pressure_hpa")),
          humidity_pct=_to_float(d.get("humidity_pct")))
 
+def _parse_weather(payload: str) -> None:
+    """Parse JSON from home/weather (published by HA automation)."""
+    d = _json_payload(payload)
+    if not isinstance(d, dict):
+        return
+    _set(
+        "weather",
+        condition=d.get("condition"),
+        temperature=_to_float(d.get("temperature")),
+        wind_speed=_to_float(d.get("wind_speed")),          # m/s enligt vår payload
+        wind_bearing=_to_float(d.get("wind_bearing")),
+        tmax=_to_float(d.get("tmax")),
+        precip_6h=_to_float(d.get("precip_6h")),
+        precip_prob_max=_to_int(d.get("precip_prob_max")),
+        uv_max=_to_float(d.get("uv_max")),
+        timestamp=d.get("timestamp"),
+    )
+
 # --- MQTT callbacks (Paho v2) -------------------------------------------
 def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
                 reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
@@ -209,11 +239,12 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_AIRQUALITY_RAW, qos=0)
     cli.subscribe(TOPIC_CALENDAR_FAM, qos=1)
     cli.subscribe(TOPIC_CALENDAR_BDAY, qos=1)
+    cli.subscribe(TOPIC_WEATHER, qos=0)
 
     print("[mqtt] subscribed:",
           TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
           TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
-          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY)
+          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER)
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
                    _props: mqtt.Properties | None = None) -> None:
@@ -234,6 +265,7 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic == TOPIC_SHELLY_BHT:       _parse_shelly_bht(payload);    return
     if msg.topic == TOPIC_POWER:            _parse_power(payload);         return
     if msg.topic == TOPIC_AIRQUALITY_RAW:   _parse_airquality_raw(payload);return
+    if msg.topic == TOPIC_WEATHER:          _parse_weather(payload);       return
 
 # --- Start (idempotent, bakgrundstråd) ----------------------------------
 def start() -> None:

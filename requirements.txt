@@ -1,6 +1,7 @@
 python-dotenv
 requests
 dash
+dash-iconify
 pandas
 matplotlib
 
