@@ -11,7 +11,7 @@ from components.bht_box import bht_compute
 from components.power_box import power_compute
 from components.voc_box import voc_compute
 
-from fetch import fetch_tibber, fetch_weather
+from fetch import fetch_tibber
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
@@ -23,7 +23,7 @@ LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
 
 # Initiala fetch (best effort)
 try:
-    fetch_tibber.main(); fetch_weather.main()
+    fetch_tibber.main()
 except Exception as e:
     print(f"Initial fetch failed: {e}")
 
@@ -37,17 +37,17 @@ app.layout = html.Div(
     className="app-wrapper",
     children=[
         html.Div(id="calendar-box", className="calendar box", children=calendar_box()),
-        html.Div(id="weather-box",  className="weather box",  children="Weather placeholder"),
 
         html.Div(
             id="widgets-box",
             className="widgets box",
             children=[
+                html.Div(id="weather-box", className="tile span-2r"),
                 html.Div(id="washer-box",   className="box washer-card"),
-                html.Div(id="dryer-box",    className="box dryer-card"),
                 html.Div(id="shelly-box",   className="tile"),
                 html.Div(id="bht-box",      className="box climate-card"),
                 html.Div(id="kia-box",      className="box kia-card"),
+                html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
                 html.Div(id="voc-box",      className="box voc-card"),
                 html.Div(id="heartbeat-box", className="tile"),
@@ -72,6 +72,7 @@ app.layout = html.Div(
         dcc.Interval(id="interval-component", interval=2*60*1000, n_intervals=0),
         dcc.Interval(id="tick", interval=5000, n_intervals=0),
         # Store för att hålla reda på senaste timestamps för olika widgets,
+        dcc.Store(id="last-ts-weather", data={}),
         dcc.Store(id="last-ts-shelly", data={}),
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),

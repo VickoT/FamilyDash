@@ -72,7 +72,7 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "weather": {
         "condition": None, "temperature": None,
         "wind_speed": None, "wind_bearing": None,
-        "tmax": None, "precip_6h": None, "precip_prob_max": None,
+        "tmax": None, "precipitation": None, "precip_prob_max": None,
         "uv_max": None, "timestamp": None, "ts": None
     },
 }
@@ -216,7 +216,7 @@ def _parse_weather(payload: str) -> None:
         wind_speed=_to_float(d.get("wind_speed")),          # m/s enligt vår payload
         wind_bearing=_to_float(d.get("wind_bearing")),
         tmax=_to_float(d.get("tmax")),
-        precip_6h=_to_float(d.get("precip_6h")),
+        precipitation=_to_float(d.get("precipitation")),
         precip_prob_max=_to_int(d.get("precip_prob_max")),
         uv_max=_to_float(d.get("uv_max")),
         timestamp=d.get("timestamp"),

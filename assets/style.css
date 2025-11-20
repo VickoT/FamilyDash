@@ -43,32 +43,26 @@ html, body{
 /**********************************************************
  * Globala textklasser
  **********************************************************/
-.timestamp {
-  font-size: .8rem;
-  opacity: .65;
-  margin-top: 4px;
-  display: block;
-}
+.timestamp { font-size:.8rem; opacity:.65; margin-top:4px; display:block; }
 
 /**********************************************************
  * 2) Top-level grid
  **********************************************************/
 .app-wrapper{
-  width: 1280px;
-  height: 720px;
-  padding: 5px;
+  width:1280px;
+  height:720px;
+  padding:5px;
 
-  display: grid;
-  grid-template-columns: 1fr 1fr 2fr;
-  grid-template-rows: auto 1fr;
-  gap: var(--gap);
+  display:grid;
+  grid-template-columns: 1fr 1fr 2fr; /* kalender | widgets | widgets */
+  grid-template-rows: auto 1fr;       /* överdel (kalender+widgets), underdel (tibber) */
+  gap:var(--gap);
   place-items: stretch stretch;
 }
 
-/* Placera huvudboxar */
-#calendar-box { grid-column: 1 / 2; grid-row: 1 / -1; min-height:0; }
-#weather-box  { grid-column: 2 / 3; grid-row: 1 / 2;  min-height:0; }
-#widgets-box  { grid-column: 3 / 4; grid-row: 1 / 2;  min-height:0; }
+/* Placera huvudboxar (oneliners) */
+#calendar-box { grid-column: 1 / 2; grid-row: 1 / 3;  min-height:0; }
+#widgets-box  { grid-column: 2 / 4; grid-row: 1 / 2;  min-height:0; }
 #tibber-box   { grid-column: 2 / 4; grid-row: 2 / 3;  min-height:0; }
 
 /**********************************************************
@@ -86,52 +80,49 @@ html, body{
  * 4) Kalender
  **********************************************************/
 #calendar-box{
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-  height: 100%;
-  min-height: 0;
-  overflow: visible;
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  height:100%;
+  min-height:0;
+  overflow:visible;
 }
 
 .day{
-  background: var(--bg-day);
-  border: 1px solid var(--border-day);
-  border-radius: var(--radius);
-  color: var(--fg-text);
-  padding: 6px 4px 6px 10px;
-
-  display: flex; flex-direction: column; align-items: flex-start;
-  flex: 1 1 auto; min-height: 34px; overflow: hidden;
+  background:var(--bg-day);
+  border:1px solid var(--border-day);
+  border-radius:var(--radius);
+  color:var(--fg-text);
+  padding:6px 4px 6px 10px;
+  display:flex; flex-direction:column; align-items:flex-start;
+  flex:1 1 auto; min-height:34px; overflow:hidden;
 }
+.day.today{ background:var(--bg-day-today); border-color:var(--border-day-today); }
 
-.day.today{ background: var(--bg-day-today); border-color: var(--border-day-today); }
-
-.day-label, .day-title{
-  text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
-  font-size: 1rem; color: var(--fg-muted); flex: 0 0 auto;
+.day-label,.day-title{
+  text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:3px;
+  font-size:1rem; color:var(--fg-muted); flex:0 0 auto;
 }
+.day .day-title.sunday,.day .day-label.sunday{ color:var(--fg-sunday)!important; }
 
-.day .day-title.sunday, .day .day-label.sunday{ color: var(--fg-sunday) !important; }
-
-.events, .day-content{
-  margin: 6px 0 0; padding: 0; list-style: none; display: block !important;
-  font-size: 1.3rem; font-weight: 600; flex: 1 1 auto; min-height: 0; overflow: hidden; text-wrap: pretty;
+.events,.day-content{
+  margin:6px 0 0; padding:0; list-style:none; display:block!important;
+  font-size:1.3rem; font-weight:600; flex:1 1 auto; min-height:0; overflow:hidden; text-wrap:pretty;
 }
-
-#calendar-box .day:last-child{ margin-bottom: 0; }
+#calendar-box .day:last-child{ margin-bottom:0; }
 
 /**********************************************************
- * 5) Väder
+ * 5) Väder – innehållsstil
  **********************************************************/
-.weather-card {
+.weather-card{
   display:flex; flex-direction:column; gap:8px;
-  background:var(--bg-card); padding: 10px; margin: 5px;
-  border-radius: var(--radius-lg);
+  background:var(--bg-card); padding:10px; margin:5px;
+  border-radius:var(--radius-lg);
 }
 .wx-title{ font-size:.95rem; opacity:.8; margin-bottom:2px; }
 .wx-row-main{ display:flex; align-items:center; gap:14px; }
-.wx-ico.big{ font-size:64px; line-height:1; }
+.wx-ico.big{ font-size:94px; line-height:1; }
+.wx-ico.big { width: 94px; height: 94px; line-height: 1; }
 .wx-now-col{ display:flex; flex-direction:column; gap:2px; }
 .wx-sub{ font-size:.85rem; opacity:.75; }
 .wx-now{ font-size:2rem; font-weight:600; }
@@ -143,143 +134,131 @@ html, body{
 .uv-low{ color:#2e7d32; } .uv-medium{ color:#f9a825; } .uv-high{ color:#fb8c00; }
 .uv-very-high{ color:#c62828; } .uv-extreme{ color:#6a1b9a; } .uv-unknown{ color:inherit; opacity:.7; }
 
+/* — Fixa “nestad” look: låt yttre tile vara kortet — */
+#weather-box.tile{
+  background: var(--bg-card);
+  border-color: var(--border-day);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  display:flex;
+}
+#weather-box .weather-card{
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  flex: 1;
+}
+
 /**********************************************************
- * 6) Widgets – 4×2 grid
+ * 6) Widgets – grid för tiles (max två rader)
  **********************************************************/
+
 #widgets-box{
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: repeat(2, 160px);    /* ← 2 rader */
   gap: var(--gap);
-  min-height: 0;
+  grid-auto-flow: row;                      /* behåll ordningen */
+  grid-template-areas:
+    "weather washer  bht  shelly  power"
+    "weather dryer voc kia heartbeat";
+}
+
+/* bind rutor till ytor */
+#weather-box   { grid-area: weather; }
+#washer-box    { grid-area: washer; }
+#dryer-box     { grid-area: dryer; }
+#shelly-box    { grid-area: shelly; }
+#power-box     { grid-area: power; }
+#bht-box       { grid-area: bht; }
+#kia-box       { grid-area: kia; }
+#voc-box       { grid-area: voc; }
+#heartbeat-box { grid-area: heartbeat; }
+
+/* ta bort span-2c om du hade det */
+#weather-box {
+  grid-row: span 2;   /* ← gör den två rader hög */
+  grid-column: auto;  /* ← bara en kolumn bred */
 }
 
 .tile{
-  background: var(--bg-app);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--pad);
+  background:var(--bg-app);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:var(--pad);
   display:flex; align-items:center; justify-content:center;
-  color: var(--fg-text); font-weight:600; min-height:0;
+  color:var(--fg-text); font-weight:600; min-height:0;
 }
-
 .tile.span-2c{ grid-column: span 2; }
-.tile.span-2r{ grid-row: span 2; }
+.tile.span-2r{ grid-row: span 2; }  /* använd på #weather-box */
 
 /**********************************************************
- * 6a) Appliance tiles (gemensam bas för washer/dryer/KIA)
+ * 6a) Appliance tiles (washer/dryer/KIA – bas)
  **********************************************************/
 .appliance-card{
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  color: var(--fg-text);
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  color:var(--fg-text);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:6px; transition: background .15s, color .15s, box-shadow .15s;
 }
-
 .appliance-card .time{ font-size:.8rem; color:#aaa; }
 .appliance-card .value{ font-size:1.4rem; font-weight:700; color:#fff; line-height:1; }
-
 .appliance-card .appliance-svg{ width:84px; height:84px; display:block; color:#000; }
-
-/* Aktivt läge (delat) */
-.appliance-card.active{
-  background: var(--accent-active);
-  color:#000;
-  box-shadow: 0 0 16px var(--accent-active);
-}
+.appliance-card.active{ background:var(--accent-active); color:#000; box-shadow:0 0 16px var(--accent-active); }
 
 /**********************************************************
  * 6b) Washer – unika delar
  **********************************************************/
 #washer-box .time{ font-size:.8rem; color:#aaa; }
-
-@keyframes washer-spin{ to { transform: rotate(360deg); } }
-#washer-box.active .washer-svg .door{
-  animation: washer-spin 1.6s linear infinite;
-  will-change: transform;
-}
-
+@keyframes washer-spin{ to{ transform:rotate(360deg); } }
+#washer-box.active .washer-svg .door{ animation:washer-spin 1.6s linear infinite; will-change:transform; }
 .washer-svg{ width:84px; height:84px; display:block; color:#000; }
 
 /**********************************************************
  * 6c) Dryer – unika delar + animationer
  **********************************************************/
-.dryer-card .dash-markdown > *{ margin: 0; }     /* ta bort MD-marginaler */
+.dryer-card .dash-markdown > *{ margin:0; }
 .dryer-card .dryer-svg{ width:84px; height:84px; display:block; color:#000; }
-
 .dryer-card .dryer-svg .heat{ display:none; }
 @keyframes heat-wave{
-  0%{ transform: translateY(0); opacity:.35; }
-  50%{ transform: translateY(-2px); opacity:.8; }
-  100%{ transform: translateY(0); opacity:.35; }
+  0%{ transform:translateY(0); opacity:.35; }
+  50%{ transform:translateY(-2px); opacity:.8; }
+  100%{ transform:translateY(0); opacity:.35; }
 }
 .dryer-card.active .dryer-svg .heat{ display:inline; opacity:.6; }
-.dryer-card.active .dryer-svg .heat path:nth-child(1){ animation: heat-wave 1.6s ease-in-out infinite; }
-.dryer-card.active .dryer-svg .heat path:nth-child(2){ animation: heat-wave 1.6s ease-in-out .2s infinite; }
-.dryer-card.active .dryer-svg .heat path:nth-child(3){ animation: heat-wave 1.6s ease-in-out .4s infinite; }
-
-@keyframes fan-spin{ to { transform: rotate(360deg); } }
-.dryer-card.active .dryer-svg .fan{
-  animation: fan-spin 1.4s linear infinite;
-  will-change: transform;
-  transform-origin: 32px 38px;
-}
+.dryer-card.active .dryer-svg .heat path:nth-child(1){ animation:heat-wave 1.6s ease-in-out infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(2){ animation:heat-wave 1.6s ease-in-out .2s infinite; }
+.dryer-card.active .dryer-svg .heat path:nth-child(3){ animation:heat-wave 1.6s ease-in-out .4s infinite; }
+@keyframes fan-spin{ to{ transform:rotate(360deg); } }
+.dryer-card.active .dryer-svg .fan{ animation:fan-spin 1.4s linear infinite; will-change:transform; transform-origin:32px 38px; }
 
 /**********************************************************
- * 6d) KIA – minimal stil utan ikoner (nu)
+ * 6d) KIA – min
  **********************************************************/
-.kia-card .kv-ts{
-  margin-top: .15rem;
-  font-size: .9rem;
-  opacity: .7;
-}
+.kia-card .kv-ts{ margin-top:.15rem; font-size:.9rem; opacity:.7; }
 
 /**********************************************************
  * 6e) VOC – luftkvalitet
  **********************************************************/
-
 .voc-card{
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  color: var(--fg-text);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  padding:1px;
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);
+  color:var(--fg-text);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; padding:1px;
 }
-
-.voc-card .title{
-  font-size:.95rem;
-  opacity:.85;
-  text-align:center;
-}
-.voc-card .value{
-  font-size:1.6rem;
-  font-weight:700;
-  text-align:center;
-  /* ingen färg här – styrs av iaq-klasserna nedan */
-}
-.voc-card .emoji{
-  font-size:3rem;
-  line-height:1;
-  text-align:center;
-}
-
-.voc-card .timestamp{
-  font-size:.8rem;
-  opacity:.65;
-  margin-top:4px;
-}
-
-/* IAQ-färger för just ppb-värdet */
-.voc-card .value.iaq-1 { color:#4CAF50; }  /* grön */
-.voc-card .value.iaq-2 { color:#FFEB3B; }  /* gul */
-.voc-card .value.iaq-3 { color:#FF9800; }  /* orange */
-.voc-card .value.iaq-4 { color:#F44336; }  /* röd */
-.voc-card .value.iaq-5 { color:#B71C1C; }  /* mörkröd */
+.voc-card .title{ font-size:.95rem; opacity:.85; text-align:center; }
+.voc-card .value{ font-size:1.6rem; font-weight:700; text-align:center; }
+.voc-card .emoji{ font-size:3rem; line-height:1; text-align:center; }
+.voc-card .timestamp{ font-size:.8rem; opacity:.65; margin-top:4px; }
+.voc-card .value.iaq-1{ color:#4CAF50; }
+.voc-card .value.iaq-2{ color:#FFEB3B; }
+.voc-card .value.iaq-3{ color:#FF9800; }
+.voc-card .value.iaq-4{ color:#F44336; }
+.voc-card .value.iaq-5{ color:#B71C1C; }
 
 /**********************************************************
  * 7) Tibber
@@ -291,5 +270,5 @@ html, body{
  * 8) Hjälpklasser
  **********************************************************/
 .value{ color:#fff; font-size:1rem; font-weight:bold; }
-.hide{ display:none !important; }
+.hide{ display:none!important; }
 .box-title{ font-weight:600; opacity:.9; margin-bottom:.25rem; }

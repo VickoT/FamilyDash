@@ -1,130 +1,101 @@
 # components/weather_box.py
-# ---------------------------------------------------------------------
-# FamilyDash weather card (färgglada ikoner via Meteocons från Iconify)
-# Hämtar värden direkt från MQTT-snapshot (mqtt_subscriber.get_snapshot)
-# ---------------------------------------------------------------------
-
-import os
-from datetime import datetime
+from datetime import datetime, timezone
 from dash import html
-from dash_iconify import DashIconify
-
-# Importera snapshot från din subscriber
 from mqtt_subscriber import get_snapshot
 
-
-# --- Ikonmappning: Home Assistant → Meteocons (Iconify) ---------------
 ICON_MAP = {
-    "sunny":            "meteocons:clear-day",
-    "clear-night":      "meteocons:clear-night",
-    "partlycloudy":     "meteocons:partly-cloudy-day",
-    "cloudy":           "meteocons:cloudy",
-    "rainy":            "meteocons:rain",
-    "pouring":          "meteocons:heavy-rain",
-    "lightning":        "meteocons:thunderstorms",
-    "lightning-rainy":  "meteocons:thunderstorms-extreme",
-    "snowy":            "meteocons:snow",
-    "snowy-rainy":      "meteocons:sleet",
-    "hail":             "meteocons:hail",
-    "fog":              "meteocons:fog",
-    "windy":            "meteocons:wind",
-    "windy-variant":    "meteocons:wind",
-    "exceptional":      "meteocons:na",
+    "sunny": "sunny.svg",
+    "clear-night": "clear-night.svg",
+    "partlycloudy": "partlycloudy.svg",
+    "partlycloudy-night": "partlycloudy-night.svg",
+    "cloudy": "cloudy.svg",
+    "rainy": "rainy.svg",
+    "pouring": "pouring.svg",
+    "lightning": "lightning.svg",
+    "lightning-rainy": "lightning-rainy.svg",
+    "snowy": "snowy.svg",
+    "snowy-rainy": "snowy-rainy.svg",
+    "hail": "hail.svg",
+    "fog": "fog.svg",
+    "windy": "windy.svg",
+    "windy-variant": "windy-variant.svg",
 }
 
-
-# --- UV nivåer (klass och text) ---------------------------------------
 def uv_bucket(v):
-    if not isinstance(v, (int, float)):
-        return "unknown", "–"
-    if v <= 2:   return "low",        "Lav"
-    if v <= 5:   return "medium",     "Moderat"
-    if v <= 7:   return "high",       "Høj"
-    if v <= 10:  return "very-high",  "Meget høj"
-    return "extreme", "Ekstrem"
-
+    if not isinstance(v, (int, float)): return "unknown", "–"
+    if v <= 2:  return "low", "Låg"
+    if v <= 5:  return "medium", "Mellan"
+    if v <= 7:  return "high", "Hög"
+    if v <= 10: return "very-high", "Mycket hög"
+    return "extreme", "Extrem"
 
 def uv_class(v):
     b, _ = uv_bucket(v)
     return f"uv uv-{b}"
 
+def icon_src(condition):
+    fname = ICON_MAP.get((condition or "").lower(), "cloudy.svg")
+    return f"/assets/icons/{fname}"
 
-# --- Huvudkomponent ----------------------------------------------------
 def weather_box():
     try:
-        snap = get_snapshot()
-        wx = snap.get("weather", {})
+        wx = get_snapshot().get("weather", {})  # vädret ligger på toppnivå
 
-        condition   = wx.get("condition") or "cloudy"
+        condition   = wx.get("condition")
         temperature = wx.get("temperature")
         tmax        = wx.get("tmax")
         uvmax       = wx.get("uv_max")
-        rain6h      = wx.get("precip_6h")
-        prob        = wx.get("precip_prob_max")
-        ts          = wx.get("timestamp")
+        rain        = wx.get("precipitation")      # <-- rätt fält
+        wind_speed  = wx.get("wind_speed")
+        ts          = wx.get("ts")
 
-        # Ikonval (flerfärgad Meteocons)
-        icon = ICON_MAP.get(condition, "meteocons:cloudy")
+        icon_path = icon_src(condition)
 
-        # Formateringar
         now_txt  = f"{temperature:.0f}°C" if isinstance(temperature, (int, float)) else "–°C"
         tmax_txt = f"{tmax:.0f}°C"        if isinstance(tmax, (int, float)) else "–°C"
-        uv_txt   = f"{uvmax:.0f}"         if isinstance(uvmax, (int, float)) else "–"
-        rain_txt = f"{rain6h:.1f} mm"     if isinstance(rain6h, (int, float)) else "0.0 mm"
-        prob_txt = f"{prob:.0f}%"         if isinstance(prob, (int, float)) else "–"
+        uv_txt   = f"{uvmax:.1f}"         if isinstance(uvmax, (int, float)) else "–"
+        # gör rain till float om det kommer som sträng
+        try:
+            rain_f = float(rain) if rain is not None else None
+        except (TypeError, ValueError):
+            rain_f = None
+        rain_txt = f"{rain_f:.1f} mm" if isinstance(rain_f, (int, float)) else "– mm"
 
-        # UV visning
-        _, uv_label = uv_bucket(uvmax)
-        uv_disp = f"{uv_txt} ({uv_label})" if uv_txt != "–" else "–"
-
-        # Tidsstämpel (UTC → lokal)
+        # ts: stöd både epoch (sek) och ISO-sträng
         gen_txt = ""
-        if ts:
+        if ts is not None:
             try:
-                dt = datetime.fromisoformat(ts)
-                gen_txt = dt.strftime("%Y-%m-%d, %H:%M")
+                if isinstance(ts, (int, float)):
+                    dt = datetime.fromtimestamp(float(ts), tz=timezone.utc).astimezone()
+                elif isinstance(ts, str):
+                    dt = datetime.fromisoformat(ts)
+                else:
+                    dt = None
+                gen_txt = dt.strftime("%Y-%m-%d, %H:%M") if dt else str(ts)
             except Exception:
                 gen_txt = str(ts)
 
-        # --- Bygg HTML -------------------------------------------------
         return html.Div(
             [
-                # Översta raden: ikon + temp
                 html.Div(
                     [
-                        html.Span(DashIconify(icon=icon, width=48), className="wx-ico big"),
-                        html.Div([html.Div(now_txt, className="wx-now")], className="wx-now-col"),
+                        html.Img(src=icon_path, className="wx-ico big", draggable="false"),
+                        html.Span(now_txt, className="wx-now"),
                     ],
                     className="wx-row-main",
                 ),
-
-                # Prognosdetaljer
                 html.Ul(
                     [
                         html.Li([html.Span("Tₘₐₓ: "),  html.Span(tmax_txt)]),
-                        html.Li([
-                            html.Span("UVₘₐₓ: "),
-                            # Tar bort title, kan säker förenkla ovan nu
-                            html.Span(uv_disp, className=uv_class(uvmax)),
-                        ]),
-                        html.Li([html.Span("Nedbør: "), html.Span(f"{rain_txt}  {prob_txt}")]),
+                        html.Li([html.Span("UVₘₐₓ: "), html.Span(uv_txt, className=uv_class(uvmax))]),
+                        html.Li([html.Span("Nedbør: "),  html.Span(rain_txt)]),
                     ],
                     className="wx-stats",
                 ),
-
-                # Tidsstämpel
                 html.Div(gen_txt, className="wx-ts"),
             ],
             className="box weather-card",
         )
-
     except Exception as e:
-        print(f"[weather_box] failed to read MQTT snapshot: {e}")
-        return html.Div("Ingen vejrudsigtsdata", className="box weather-card")
-
-
-# --- CLI-test ----------------------------------------------------------
-if __name__ == "__main__":
-    print("Testing weather_box() output…")
-    box = weather_box()
-    print("Children:", box.children)
+        print(f"[weather_box] failed: {e}", flush=True)
+        return html.Div("Ingen väderdata", className="box weather-card")
