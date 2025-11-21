@@ -162,23 +162,22 @@ html, body{
   gap: var(--gap);
   grid-auto-flow: row;                      /* behåll ordningen */
   grid-template-areas:
-    "weather washer  bht  shelly  power"
-    "weather dryer voc kia heartbeat";
+    "weather washer  climate shelly  power"
+    "weather dryer   climate kia     heartbeat";
 }
 
 /* bind rutor till ytor */
-#weather-box   { grid-area: weather; }
-#washer-box    { grid-area: washer; }
-#dryer-box     { grid-area: dryer; }
-#shelly-box    { grid-area: shelly; }
-#power-box     { grid-area: power; }
-#bht-box       { grid-area: bht; }
-#kia-box       { grid-area: kia; }
-#voc-box       { grid-area: voc; }
-#heartbeat-box { grid-area: heartbeat; }
+#weather-box          { grid-area: weather; }
+#washer-box           { grid-area: washer; }
+#dryer-box            { grid-area: dryer; }
+#shelly-box           { grid-area: shelly; }
+#power-box            { grid-area: power; }
+#climate-quality-box  { grid-area: climate; }
+#kia-box              { grid-area: kia; }
+#heartbeat-box        { grid-area: heartbeat; }
 
-/* ta bort span-2c om du hade det */
-#weather-box {
+/* widgets that span 2 rows */
+#weather-box, #climate-quality-box {
   grid-row: span 2;   /* ← gör den två rader hög */
   grid-column: auto;  /* ← bara en kolumn bred */
 }
@@ -241,24 +240,65 @@ html, body{
 .kia-card .kv-ts{ margin-top:.15rem; font-size:.9rem; opacity:.7; }
 
 /**********************************************************
- * 6e) VOC – luftkvalitet
+ * 6e) Climate + Air Quality (combined widget)
  **********************************************************/
-.voc-card{
-  background:var(--bg-card);
-  border-radius:var(--radius-lg);
-  color:var(--fg-text);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:2px; padding:1px;
+.climate-quality-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  color: var(--fg-text);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  gap: 16px;
 }
-.voc-card .title{ font-size:.95rem; opacity:.85; text-align:center; }
-.voc-card .value{ font-size:1.6rem; font-weight:700; text-align:center; }
-.voc-card .emoji{ font-size:3rem; line-height:1; text-align:center; }
-.voc-card .timestamp{ font-size:.8rem; opacity:.65; margin-top:4px; }
-.voc-card .value.iaq-1{ color:#4CAF50; }
-.voc-card .value.iaq-2{ color:#FFEB3B; }
-.voc-card .value.iaq-3{ color:#FF9800; }
-.voc-card .value.iaq-4{ color:#F44336; }
-.voc-card .value.iaq-5{ color:#B71C1C; }
+
+.climate-quality-card .climate-section,
+.climate-quality-card .airquality-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.climate-quality-card .airquality-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+.climate-quality-card .subtitle {
+  font-size: 1.2rem;
+  opacity: 0.85;
+  text-align: center;
+  font-weight: 600;
+}
+
+.climate-quality-card .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.climate-quality-card .emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.climate-quality-card .timestamp {
+  font-size: 0.75rem;
+  opacity: 0.65;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* AQI color coding - only apply to the numeric value */
+.climate-quality-card .voc-value.iaq-1 { color: #4CAF50; }
+.climate-quality-card .voc-value.iaq-2 { color: #FFEB3B; }
+.climate-quality-card .voc-value.iaq-3 { color: #FF9800; }
+.climate-quality-card .voc-value.iaq-4 { color: #F44336; }
+.climate-quality-card .voc-value.iaq-5 { color: #B71C1C; }
 
 /**********************************************************
  * 7) Tibber

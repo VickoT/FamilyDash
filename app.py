@@ -7,9 +7,8 @@ from components.weather_box import weather_box
 from components.washer_box import  washer_compute
 from components.dryer_box import dryer_compute
 from components.kia_box import kia_compute
-from components.bht_box import bht_compute
 from components.power_box import power_compute
-from components.voc_box import voc_compute
+from components.climate_quality_box import climate_quality_compute
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
@@ -36,12 +35,11 @@ app.layout = html.Div(
             children=[
                 html.Div(id="weather-box", className="tile span-2r"),
                 html.Div(id="washer-box",   className="box washer-card"),
+                html.Div(id="climate-quality-box", className="tile span-2r"),
                 html.Div(id="shelly-box",   className="tile"),
-                html.Div(id="bht-box",      className="box climate-card"),
                 html.Div(id="kia-box",      className="box kia-card"),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
-                html.Div(id="voc-box",      className="box voc-card"),
                 html.Div(id="heartbeat-box", className="tile"),
             ],
         ),
@@ -69,9 +67,8 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),
         dcc.Store(id="last-ts-kia", data={}),
-        dcc.Store(id="last-ts-bht", data={}),
+        dcc.Store(id="last-ts-climate-quality", data={}),
         dcc.Store(id="last-ts-power", data={}),
-        dcc.Store(id="last-ts-voc", data={}),
     ],
 )
 
@@ -187,16 +184,16 @@ def refresh_heartbeat(_n):
 def cb_kia(_n, last_ts):
     return kia_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
-# ---- BHT (klimat) -------------------------------------------------------
+# ---- Climate + Air Quality (combined) -------------------------------------
 @app.callback(
-    [Output("bht-box", "children"),
-     Output("bht-box", "className"),
-     Output("last-ts-bht", "data")],
+    [Output("climate-quality-box", "children"),
+     Output("climate-quality-box", "className"),
+     Output("last-ts-climate-quality", "data")],
     Input("tick", "n_intervals"),
-    State("last-ts-bht", "data"),
+    State("last-ts-climate-quality", "data"),
 )
-def cb_bht(_n, last_ts):
-    return bht_compute(get_snapshot(), LOCAL_TZ, last_ts)
+def cb_climate_quality(_n, last_ts):
+    return climate_quality_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 # ---- Tibber Power -------------------------------------------------------
 @app.callback(
@@ -208,17 +205,6 @@ def cb_bht(_n, last_ts):
 )
 def cb_power(_n, last_ts):
     return power_compute(get_snapshot(), LOCAL_TZ, last_ts)
-
-# ---- VOC (airquality_raw) -----------------------------------------------
-@app.callback(
-    [Output("voc-box", "children"),
-     Output("voc-box", "className"),
-     Output("last-ts-voc", "data")],
-    Input("tick", "n_intervals"),
-    State("last-ts-voc", "data"),
-)
-def cb_voc(_n, last_ts):
-    return voc_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)
