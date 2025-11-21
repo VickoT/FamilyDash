@@ -11,8 +11,6 @@ from components.bht_box import bht_compute
 from components.power_box import power_compute
 from components.voc_box import voc_compute
 
-from fetch import fetch_tibber
-
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
 from datetime import datetime, timezone
@@ -20,12 +18,6 @@ from zoneinfo import ZoneInfo
 import os, time
 
 LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
-
-# Initiala fetch (best effort)
-try:
-    fetch_tibber.main()
-except Exception as e:
-    print(f"Initial fetch failed: {e}")
 
 app = Dash(__name__)
 

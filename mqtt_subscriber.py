@@ -39,6 +39,7 @@ TOPIC_HEARTBEAT: str      = "home/system/heartbeat"
 TOPIC_CAR: str            = "home/car/state"
 TOPIC_SHELLY_BHT: str     = "home/env/livingroom/ht/state"
 TOPIC_POWER: str          = "home/tibber/power"
+TOPIC_TIBBER_FORECAST: str    = "home/tibber/forecast/json"
 
 # Air quality (rå JSON från Pico)
 TOPIC_AIRQUALITY_RAW: str = "home/env/livingroom/airquality_raw"
@@ -74,6 +75,10 @@ _snapshot: Dict[str, Dict[str, Any]] = {
         "wind_speed": None, "wind_bearing": None,
         "tmax": None, "precipitation": None, "precip_prob_max": None,
         "uv_max": None, "timestamp": None, "ts": None
+    },
+    "tibber_forecast": {
+        "prices": None,
+        "ts": None
     },
 }
 
@@ -193,6 +198,32 @@ def _parse_power(payload: str) -> None:
     if not isinstance(d, dict): return
     _set("pulse_power", power=_to_float(d.get("power")))
 
+def _parse_tibber_forecast(payload: str) -> None:
+    """Parse JSON array from home/tibber/forecast/json (published by HA)."""
+    if not payload.strip():
+        return
+    try:
+        prices = json.loads(payload.strip())
+    except Exception:
+        return
+    if not isinstance(prices, list):
+        return
+
+    # Convert price from SEK to öre (multiply by 100)
+    processed = []
+    for item in prices:
+        if isinstance(item, dict):
+            processed.append({
+                "startsAt": item.get("start_time"),
+                "energy_ore": _to_float(item.get("price")) * 100 if item.get("price") else None,
+                "level": item.get("level")
+            })
+
+    with _lock:
+        _snapshot["tibber_forecast"]["prices"] = processed
+        _snapshot["tibber_forecast"]["ts"] = _now()
+
+
 def _parse_airquality_raw(payload: str) -> None:
     d = _json_payload(payload)
     if not isinstance(d, dict): return
@@ -240,11 +271,12 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_CALENDAR_FAM, qos=1)
     cli.subscribe(TOPIC_CALENDAR_BDAY, qos=1)
     cli.subscribe(TOPIC_WEATHER, qos=0)
+    cli.subscribe(TOPIC_TIBBER_FORECAST, qos=1)
 
     print("[mqtt] subscribed:",
           TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
           TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
-          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER)
+          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST)
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
                    _props: mqtt.Properties | None = None) -> None:
@@ -264,6 +296,7 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic == TOPIC_CAR:              _parse_car(payload);           return
     if msg.topic == TOPIC_SHELLY_BHT:       _parse_shelly_bht(payload);    return
     if msg.topic == TOPIC_POWER:            _parse_power(payload);         return
+    if msg.topic == TOPIC_TIBBER_FORECAST:  _parse_tibber_forecast(payload); return
     if msg.topic == TOPIC_AIRQUALITY_RAW:   _parse_airquality_raw(payload);return
     if msg.topic == TOPIC_WEATHER:          _parse_weather(payload);       return
 

@@ -4,11 +4,7 @@ import matplotlib.colors as mcolors
 from matplotlib import colormaps as cm
 import plotly.graph_objects as go
 
-import os
-
-# Gör sökvägen relativ till projektroten
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATAFILE = os.path.join(ROOT, "data", "tibber_prices.csv")
+from mqtt_subscriber import get_snapshot
 
 
 # === Gradient coloring ===
@@ -21,7 +17,20 @@ def get_gradient_color(value, vmin=0, vmax=150, cmap="turbo"):
 
 # === Create Plotly figure ===
 def make_tibber_figure():
-    df_all = pd.read_csv(DATAFILE)
+    snapshot = get_snapshot()
+    prices = snapshot.get("tibber_forecast", {}).get("prices") or []
+
+    if not prices:
+        # Return empty figure if no data yet
+        fig = go.Figure()
+        fig.update_layout(
+            template="plotly_dark",
+            title="Elpris (øre/kWh) - Väntar på data...",
+            height=400
+        )
+        return fig
+
+    df_all = pd.DataFrame(prices)
     df_all["color"] = df_all["energy_ore"].apply(lambda x: get_gradient_color(x))
 
     fig = go.Figure()

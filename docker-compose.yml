@@ -9,13 +9,3 @@ services:
     env_file: .env
     volumes:
       - ./data:/app/data
-
-  scheduler:
-    image: ghcr.io/vickot/familydash-scheduler:latest
-    container_name: scheduler
-    platform: linux/arm64
-    restart: unless-stopped
-    env_file: .env
-    volumes:
-      - ./data:/app/data
-      - ./.config:/app/.config:ro

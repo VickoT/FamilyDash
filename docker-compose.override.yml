@@ -1,6 +1,4 @@
 services:
-  # Överväg att lägga koden i en undermapp som "dash" för bättre struktur
-  # desamma för scheduler
   dash:
     build:
       context: .
@@ -11,25 +9,6 @@ services:
     volumes:
       - ./:/app
       - ./data:/app/data
-    environment:
-      MQTT_HOST: 192.168.50.147 # dashpi
-      MQTT_PORT: "1883"
-      MQTT_CLIENT: familydash-mac
-      MQTT_USER: vicko
-      MQTT_PASS: verysecure123
-      SHELLY_PREFIX: shelly-htg3     # <-- viktigt
-      LOCAL_TZ: Europe/Stockholm
-
-  scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile.scheduler
-    container_name: scheduler
-    restart: unless-stopped
-    volumes:
-      - .:/app
-      - ./data:/app/data
-      - ./.config:/app/.config:ro
     environment:
       MQTT_HOST: 192.168.50.147 # dashpi
       MQTT_PORT: "1883"
