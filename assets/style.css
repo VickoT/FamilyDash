@@ -172,12 +172,12 @@ html, body{
 #dryer-box            { grid-area: dryer; }
 #shelly-box           { grid-area: shelly; }
 #power-box            { grid-area: power; }
-#climate-quality-box  { grid-area: climate; }
+.climate-wrapper      { grid-area: climate; }
 #kia-box              { grid-area: kia; }
 #heartbeat-box        { grid-area: heartbeat; }
 
 /* widgets that span 2 rows */
-#weather-box, #climate-quality-box {
+#weather-box, .climate-wrapper {
   grid-row: span 2;   /* ← gör den två rader hög */
   grid-column: auto;  /* ← bara en kolumn bred */
 }
@@ -242,6 +242,19 @@ html, body{
 /**********************************************************
  * 6e) Climate + Air Quality (combined widget)
  **********************************************************/
+/* Climate wrapper with button */
+.climate-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.climate-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .climate-quality-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
@@ -251,6 +264,7 @@ html, body{
   justify-content: space-between;
   padding: 12px;
   gap: 16px;
+  flex: 1;
 }
 
 .climate-quality-card .climate-section,
@@ -268,14 +282,14 @@ html, body{
 }
 
 .climate-quality-card .subtitle {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   opacity: 0.85;
   text-align: center;
   font-weight: 600;
 }
 
 .climate-quality-card .value {
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 700;
   text-align: center;
 }
@@ -312,3 +326,155 @@ html, body{
 .value{ color:#fff; font-size:1rem; font-weight:bold; }
 .hide{ display:none!important; }
 .box-title{ font-weight:600; opacity:.9; margin-bottom:.25rem; }
+
+/**********************************************************
+ * 9) Temperature Modal
+ **********************************************************/
+/* Modal trigger button in climate widget */
+.modal-trigger-btn {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  color: var(--fg-text);
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-trigger-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%) scale(1.05);
+}
+
+.modal-trigger-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-50%) scale(0.95);
+}
+
+/* Modal overlay */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Modal content box */
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  min-width: 600px;
+}
+
+/* Modal header */
+.modal-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Modal close button */
+.modal-close-button {
+  background: transparent;
+  border: none;
+  color: var(--fg-text);
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.modal-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Temperature tiles container */
+.temp-tiles-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 10px 0;
+}
+
+/* Individual temperature tile */
+.temp-tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.temp-tile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.temp-tile.no-data {
+  opacity: 0.5;
+}
+
+.temp-tile .room-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.temp-tile .room-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.temp-tile .room-temp {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--fg-text);
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.temp-tile .room-humidity {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #89CFF0;
+  line-height: 1;
+}

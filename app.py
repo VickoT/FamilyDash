@@ -9,6 +9,7 @@ from components.dryer_box import dryer_compute
 from components.kia_box import kia_compute
 from components.power_box import power_compute
 from components.climate_quality_box import climate_quality_compute
+from components.temperature_modal import create_modal_layout, render_temperature_tiles
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
@@ -35,7 +36,14 @@ app.layout = html.Div(
             children=[
                 html.Div(id="weather-box", className="tile span-2r"),
                 html.Div(id="washer-box",   className="box washer-card"),
-                html.Div(id="climate-quality-box", className="tile span-2r"),
+                # Climate widget with modal button
+                html.Div(
+                    className="climate-wrapper tile span-2r",
+                    children=[
+                        html.Div(id="climate-quality-box", className="climate-content"),
+                        html.Button("+", id="open-temp-modal", className="modal-trigger-btn", n_clicks=0),
+                    ]
+                ),
                 html.Div(id="shelly-box",   className="tile"),
                 html.Div(id="kia-box",      className="box kia-card"),
                 html.Div(id="dryer-box",    className="dryer-card"),
@@ -56,6 +64,9 @@ app.layout = html.Div(
             ),
         ),
 
+        # Temperature modal
+        create_modal_layout(),
+
         # Två olika intervaller för callback-anrop:
         # 2 minuter för fetch av tibber, kalender, väder
         # 5 sekunder för uppdatering av widgets
@@ -69,6 +80,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-kia", data={}),
         dcc.Store(id="last-ts-climate-quality", data={}),
         dcc.Store(id="last-ts-power", data={}),
+        dcc.Store(id="modal-open", data=False),
     ],
 )
 
@@ -187,13 +199,16 @@ def cb_kia(_n, last_ts):
 # ---- Climate + Air Quality (combined) -------------------------------------
 @app.callback(
     [Output("climate-quality-box", "children"),
-     Output("climate-quality-box", "className"),
      Output("last-ts-climate-quality", "data")],
     Input("tick", "n_intervals"),
     State("last-ts-climate-quality", "data"),
 )
 def cb_climate_quality(_n, last_ts):
-    return climate_quality_compute(get_snapshot(), LOCAL_TZ, last_ts)
+    children, className, updated_ts = climate_quality_compute(get_snapshot(), LOCAL_TZ, last_ts)
+    # Wrap children in div with className
+    if children != no_update:
+        children = html.Div(children, className=className)
+    return children, updated_ts
 
 # ---- Tibber Power -------------------------------------------------------
 @app.callback(
@@ -205,6 +220,38 @@ def cb_climate_quality(_n, last_ts):
 )
 def cb_power(_n, last_ts):
     return power_compute(get_snapshot(), LOCAL_TZ, last_ts)
+
+# ---- Temperature Modal --------------------------------------------------
+@app.callback(
+    [Output("modal-open", "data"),
+     Output("temp-modal", "style")],
+    [Input("open-temp-modal", "n_clicks"),
+     Input("close-temp-modal", "n_clicks")],
+    State("modal-open", "data"),
+)
+def toggle_temperature_modal(open_clicks, close_clicks, is_open):
+    """Toggle temperature modal visibility"""
+    from dash import callback_context
+
+    if not callback_context.triggered:
+        return is_open, {"display": "flex" if is_open else "none"}
+
+    button_id = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+    if button_id == "open-temp-modal":
+        return True, {"display": "flex"}
+    elif button_id == "close-temp-modal":
+        return False, {"display": "none"}
+
+    return is_open, {"display": "flex" if is_open else "none"}
+
+@app.callback(
+    Output("temp-tiles-container", "children"),
+    Input("tick", "n_intervals"),
+)
+def update_temperature_tiles(_n):
+    """Update temperature tiles with latest sensor data"""
+    return render_temperature_tiles(get_snapshot())
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)

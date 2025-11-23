@@ -41,6 +41,11 @@ TOPIC_SHELLY_BHT: str     = "home/env/livingroom/ht/state"
 TOPIC_POWER: str          = "home/tibber/power"
 TOPIC_TIBBER_FORECAST: str    = "home/tibber/forecast/json"
 
+# Room temperature/humidity sensors
+TOPIC_ENV_OFFICE: str     = "home/env/office/ht/state"
+TOPIC_ENV_LAUNDRY: str    = "home/env/laundryroom/ht/state"
+TOPIC_ENV_BEDROOM: str    = "home/env/bedroom/ht/state"
+
 # Air quality (rå JSON från Pico)
 TOPIC_AIRQUALITY_RAW: str = "home/env/livingroom/airquality_raw"
 
@@ -80,6 +85,10 @@ _snapshot: Dict[str, Dict[str, Any]] = {
         "prices": None,
         "ts": None
     },
+    # Additional room sensors (livingroom data is in shelly_bht)
+    "env_office": {"t": None, "rh": None, "ts": None},
+    "env_laundry": {"t": None, "rh": None, "ts": None},
+    "env_bedroom": {"t": None, "rh": None, "ts": None},
 }
 
 _lock = threading.Lock()
@@ -193,6 +202,14 @@ def _parse_shelly_bht(payload: str) -> None:
          t=_to_float(d.get("t")),
          rh=_to_float(d.get("rh")))
 
+def _parse_env_room(section: str, payload: str) -> None:
+    """Generic parser for environment room sensors (office, laundry, bedroom)"""
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set(section,
+         t=_to_float(d.get("t")),
+         rh=_to_float(d.get("rh")))
+
 def _parse_power(payload: str) -> None:
     d = _json_payload(payload)
     if not isinstance(d, dict): return
@@ -272,11 +289,16 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_CALENDAR_BDAY, qos=1)
     cli.subscribe(TOPIC_WEATHER, qos=0)
     cli.subscribe(TOPIC_TIBBER_FORECAST, qos=1)
+    # Room sensors
+    cli.subscribe(TOPIC_ENV_OFFICE, qos=0)
+    cli.subscribe(TOPIC_ENV_LAUNDRY, qos=0)
+    cli.subscribe(TOPIC_ENV_BEDROOM, qos=0)
 
     print("[mqtt] subscribed:",
           TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
           TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
-          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST)
+          TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST,
+          TOPIC_ENV_OFFICE, TOPIC_ENV_LAUNDRY, TOPIC_ENV_BEDROOM)
 
 def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
                    _props: mqtt.Properties | None = None) -> None:
@@ -299,6 +321,10 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic == TOPIC_TIBBER_FORECAST:  _parse_tibber_forecast(payload); return
     if msg.topic == TOPIC_AIRQUALITY_RAW:   _parse_airquality_raw(payload);return
     if msg.topic == TOPIC_WEATHER:          _parse_weather(payload);       return
+    # Room sensors
+    if msg.topic == TOPIC_ENV_OFFICE:       _parse_env_room("env_office", payload); return
+    if msg.topic == TOPIC_ENV_LAUNDRY:      _parse_env_room("env_laundry", payload); return
+    if msg.topic == TOPIC_ENV_BEDROOM:      _parse_env_room("env_bedroom", payload); return
 
 # --- Start (idempotent, bakgrundstråd) ----------------------------------
 def start() -> None:
