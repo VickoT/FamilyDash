@@ -104,7 +104,7 @@ MQTT_USER=your_mqtt_user
 MQTT_PASS=your_mqtt_password
 MQTT_CLIENT=familydash-default
 LOCAL_TZ=Europe/Stockholm
-HA_BASE_URL=https://homeassistant.local:8123
+HA_BASE_URL=http://192.168.50.147:8123
 HA_TOKEN=your_long_lived_token
 HA_SCRIPT_ANNE=script.anne_notify
 # Optional override (seconds)
@@ -112,6 +112,13 @@ HA_TIMEOUT=5
 ```
 
 `HA_TOKEN` should be a Home Assistant long-lived access token. The dashboard uses `HA_BASE_URL`, `HA_SCRIPT_ANNE`, and the token to call `POST /api/services/script/turn_on` whenever the Anne button is pressed. If you skip these variables the button stays inactive and shows a configuration warning.
+
+### Home Assistant Variables Explained
+
+- `HA_BASE_URL` – Base URL to your Home Assistant instance (no trailing slash).
+- `HA_TOKEN` – Long-lived access token copied from your HA profile.
+- `HA_SCRIPT_ANNE` – The script or service entity you want the button to trigger.
+- `HA_TIMEOUT` – Optional request timeout in seconds (defaults to `5`).
 
 ## MQTT Topics
 
