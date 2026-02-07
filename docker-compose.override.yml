@@ -18,6 +18,6 @@ services:
       SHELLY_PREFIX: shelly-htg3     # <-- viktigt
       LOCAL_TZ: Europe/Stockholm
       HA_BASE_URL: http://192.168.50.147:8123
-      HA_SCRIPT_ANNE: script.anne_notify
+      HA_SCRIPT_ANNE: script.find_my_phone
       HA_TIMEOUT: "5"
       HA_TOKEN: ${HA_TOKEN}
