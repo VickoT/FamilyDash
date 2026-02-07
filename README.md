@@ -50,6 +50,7 @@ Dashboard UI
 - **Power Usage** - Real-time electricity consumption
 - **Tibber Prices** - Hourly electricity price forecast graph
 - **Heartbeat** - System status monitoring
+- **Anne Button** - Triggers a Home Assistant script via REST
 
 ## Hardware
 
@@ -103,7 +104,14 @@ MQTT_USER=your_mqtt_user
 MQTT_PASS=your_mqtt_password
 MQTT_CLIENT=familydash-default
 LOCAL_TZ=Europe/Stockholm
+HA_BASE_URL=https://homeassistant.local:8123
+HA_TOKEN=your_long_lived_token
+HA_SCRIPT_ANNE=script.anne_notify
+# Optional override (seconds)
+HA_TIMEOUT=5
 ```
+
+`HA_TOKEN` should be a Home Assistant long-lived access token. The dashboard uses `HA_BASE_URL`, `HA_SCRIPT_ANNE`, and the token to call `POST /api/services/script/turn_on` whenever the Anne button is pressed. If you skip these variables the button stays inactive and shows a configuration warning.
 
 ## MQTT Topics
 

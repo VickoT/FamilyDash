@@ -10,14 +10,20 @@ from components.kia_box import kia_compute
 from components.power_box import power_compute
 from components.climate_quality_box import climate_quality_compute
 from components.temperature_modal import create_modal_layout, render_temperature_tiles
+from components.anne_button import anne_button_render
+
+from ha_client import call_service
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
 from datetime import datetime, timezone
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 import os, time
 
 LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
+ANNE_SCRIPT_ENTITY = os.getenv("HA_SCRIPT_ANNE")
+STATUS_TTL_SECONDS = 5
 
 app = Dash(__name__)
 
@@ -44,7 +50,7 @@ app.layout = html.Div(
                         html.Button("+", id="open-temp-modal", className="modal-trigger-btn", n_clicks=0),
                     ]
                 ),
-                html.Div(id="shelly-box",   className="tile"),
+                html.Div(id="anne-button-box", className="anne-button-tile", children=anne_button_render(False)),
                 html.Div(id="kia-box",      className="box kia-card"),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
@@ -74,7 +80,8 @@ app.layout = html.Div(
         dcc.Interval(id="tick", interval=5000, n_intervals=0),
         # Store för att hålla reda på senaste timestamps för olika widgets,
         dcc.Store(id="last-ts-weather", data={}),
-        dcc.Store(id="last-ts-shelly", data={}),
+        dcc.Store(id="anne-button-pressed-at", data=None),
+        dcc.Store(id="anne-button-status", data=None),
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),
         dcc.Store(id="last-ts-kia", data={}),
@@ -121,35 +128,49 @@ def cb_washer(_n, last_ts):
 def cb_tibber(_):
     return make_tibber_figure()
 
-# ---- Shelly (Sovrum) ----------------------------------------------------
+# ---- Anne Button ---------------------------------------------------------
 @app.callback(
-    [Output("shelly-box", "children"),
-     Output("last-ts-shelly", "data")],
-    Input("tick", "n_intervals"),
-    State("last-ts-shelly", "data"),
+    [Output("anne-button-box", "children"),
+     Output("anne-button-pressed-at", "data"),
+     Output("anne-button-status", "data")],
+    [Input("anne-button", "n_clicks"),
+     Input("tick", "n_intervals")],
+    [State("anne-button-pressed-at", "data"),
+     State("anne-button-status", "data")],
+    prevent_initial_call=False,
 )
-def refresh_shelly(_n, last_ts):
-    snap = get_snapshot()
-    last_ts = last_ts or {}
-    s = snap.get("shelly") or {}
-    ts = s.get("ts")
+def refresh_anne_button(n_clicks, _tick, pressed_at, status_state):
+    from dash import ctx
 
-    if not ts:
-        return html.Div([html.Div("Shelly temp."), html.Div("Väntar på sensor …")]), last_ts
+    now = time.time()
+    status = status_state if isinstance(status_state, dict) else None
 
-    if last_ts.get("shelly") == ts:
-        return no_update, last_ts
+    if status and now - float(status.get("ts", 0)) > STATUS_TTL_SECONDS:
+        status = None
 
-    t = s.get("tC"); h = s.get("rh")
-    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
-    view = html.Div([
-        html.Div("Shelly temp."),
-        html.Div(f"Temp: {t:.1f} °C" if isinstance(t, (int, float)) else "Temp: –"),
-        html.Div(f"Fukt: {h:.1f} %" if isinstance(h, (int, float)) else "Fukt: –"),
-        html.Div(f"Tid: {ts_str}"),
-    ])
-    last_ts["shelly"] = ts
-    return view, last_ts
+    if ctx.triggered_id == "anne-button" and n_clicks:
+        if not ANNE_SCRIPT_ENTITY:
+            message = "HA_SCRIPT_ANNE saknas"
+            status = {"text": message, "ts": now}
+            app.logger.warning("Anne-knappen saknar konfiguration: %s", message)
+            return anne_button_render(is_active=False, status_text=message), None, status
+
+        success, error_text = call_service("script", "turn_on", {"entity_id": ANNE_SCRIPT_ENTITY})
+        if success:
+            return anne_button_render(is_active=True), now, None
+
+        message = error_text or "Fel vid anrop"
+        app.logger.warning("Anne-knappen misslyckades: %s", message)
+        status = {"text": message, "ts": now}
+        return anne_button_render(is_active=False, status_text=message), None, status
+
+    if pressed_at and (now - float(pressed_at)) < 3:
+        return anne_button_render(is_active=True), pressed_at, status
+
+    if status and status.get("text"):
+        return anne_button_render(is_active=False, status_text=status["text"]), None, status
+
+    return anne_button_render(is_active=False), None, None
 
 # ---- Dryer ---------------------------------------------------------------
 @app.callback(
@@ -205,10 +226,11 @@ def cb_kia(_n, last_ts):
 )
 def cb_climate_quality(_n, last_ts):
     children, className, updated_ts = climate_quality_compute(get_snapshot(), LOCAL_TZ, last_ts)
-    # Wrap children in div with className
-    if children != no_update:
-        children = html.Div(children, className=className)
-    return children, updated_ts
+    # Wrap children i en div när nytt innehåll kommer
+    if children == no_update or className == no_update:
+        return children, updated_ts
+    wrapped = html.Div(cast(Any, children), className=cast(str, className))
+    return wrapped, updated_ts
 
 # ---- Tibber Power -------------------------------------------------------
 @app.callback(
