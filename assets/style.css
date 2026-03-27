@@ -242,7 +242,32 @@ html, body{
 .kia-card .kv-ts{ margin-top:.15rem; font-size:.9rem; opacity:.7; }
 
 /**********************************************************
- * 6e) Climate + Air Quality (combined widget)
+ * 6e) Power box
+ **********************************************************/
+.power-card {
+  align-items: flex-start;
+  padding: 10px;
+}
+.power-card .kv-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  width: 100%;
+}
+.power-card .kv-list li {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+  padding: 2px 0;
+}
+.power-card .kv-ts {
+  margin-top: auto;
+  font-size: .85rem;
+  opacity: .7;
+}
+
+/**********************************************************
+ * 6f) Climate + Air Quality (combined widget)
  **********************************************************/
 /* Climate wrapper with button */
 .climate-wrapper {

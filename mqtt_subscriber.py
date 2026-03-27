@@ -69,7 +69,7 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "shelly":       {"tC": None, "rh": None, "online": None, "ts": None},
     "car":          {"battery": None, "range": None, "ts": None},
     "shelly_bht":   {"t": None, "rh": None, "ts": None},
-    "pulse_power":  {"power": None, "ts": None},
+    "pulse_power":  {"power": None, "power_raw": None, "power_smooth": None, "energy_day_kwh": None, "cost_day": None, "ts": None},
     "airquality_raw": {
         "eco2_ppm": None, "tvoc_ppb": None, "aqi": None,
         "temperature_c": None, "pressure_hpa": None, "humidity_pct": None,
@@ -213,7 +213,21 @@ def _parse_env_room(section: str, payload: str) -> None:
 def _parse_power(payload: str) -> None:
     d = _json_payload(payload)
     if not isinstance(d, dict): return
-    _set("pulse_power", power=_to_float(d.get("power")))
+    ts_iso = d.get("ts")
+    try:
+        from datetime import datetime as _dt
+        ts_epoch = int(_dt.fromisoformat(ts_iso).timestamp()) if ts_iso else None
+    except Exception:
+        ts_epoch = None
+    with _lock:
+        _snapshot["pulse_power"].update({k: v for k, v in {
+            "power":          _to_float(d.get("power")),
+            "power_raw":      _to_float(d.get("power_raw")),
+            "power_smooth":   _to_float(d.get("power_smooth")),
+            "energy_day_kwh": _to_float(d.get("energy_day_kwh")),
+            "cost_day":       _to_float(d.get("cost_day")),
+            "ts":             ts_epoch if ts_epoch else _now(),
+        }.items() if v is not None})
 
 def _parse_tibber_forecast(payload: str) -> None:
     """Parse JSON array from home/tibber/forecast/json (published by HA)."""
