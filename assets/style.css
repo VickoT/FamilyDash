@@ -163,7 +163,7 @@ html, body{
   grid-auto-flow: row;                      /* behåll ordningen */
   grid-template-areas:
     "weather washer  climate shelly  power"
-    "weather dryer   climate kia     heartbeat";
+    "weather dryer   .       kia     heartbeat";
 }
 
 /* bind rutor till ytor */
@@ -177,9 +177,9 @@ html, body{
 #heartbeat-box        { grid-area: heartbeat; }
 
 /* widgets that span 2 rows */
-#weather-box, .climate-wrapper {
-  grid-row: span 2;   /* ← gör den två rader hög */
-  grid-column: auto;  /* ← bara en kolumn bred */
+#weather-box {
+  grid-row: span 2;
+  grid-column: auto;
 }
 
 .tile{
@@ -289,7 +289,7 @@ html, body{
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 12px;
+  padding: 12px 12px 36px;
   gap: 16px;
   flex: 1;
 }
