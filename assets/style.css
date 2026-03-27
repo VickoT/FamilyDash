@@ -276,6 +276,14 @@ html, body{
   flex-direction: column;
 }
 
+/* Override .tile so the outer wrapper is invisible — the inner card provides the visual */
+.climate-wrapper.tile {
+  background: transparent;
+  border: none;
+  padding: 0;
+  align-items: stretch;
+}
+
 .climate-content {
   flex: 1;
   display: flex;
