@@ -37,6 +37,19 @@ def icon_src(condition):
     fname = ICON_MAP.get((condition or "").lower(), "cloudy.svg")
     return f"/assets/icons/{fname}"
 
+_GREEN_CLASSES = {"lugnt", "nästan lugnt", "lätt bris", "svag vind", "måttlig vind"}
+_YELLOW_CLASSES = {"frisk vind", "frisk bris"}
+
+def _wind_class_color(wind_class):
+    if not wind_class:
+        return "wx-wind-class"
+    key = wind_class.lower().strip()
+    if key in _GREEN_CLASSES:
+        return "wx-wind-class wx-wind-green"
+    if key in _YELLOW_CLASSES:
+        return "wx-wind-class wx-wind-yellow"
+    return "wx-wind-class wx-wind-red"
+
 def weather_box():
     try:
         wx = get_snapshot().get("weather", {})  # vädret ligger på toppnivå
@@ -47,6 +60,9 @@ def weather_box():
         uvmax       = wx.get("uv_max")
         rain        = wx.get("precipitation")      # <-- rätt fält
         wind_speed  = wx.get("wind_speed")
+        wind_gust   = wx.get("wind_gust")
+        wind_dir    = wx.get("wind_dir")
+        wind_class  = wx.get("wind_class")
         ts          = wx.get("ts")
 
         icon_path = icon_src(condition)
@@ -61,8 +77,17 @@ def weather_box():
             rain_f = None
         rain_txt = f"{rain_f:.1f} mm" if isinstance(rain_f, (int, float)) else "– mm"
 
+        if isinstance(wind_speed, (int, float)):
+            gust_txt  = f" ({wind_gust:.0f})" if isinstance(wind_gust, (int, float)) else ""
+            dir_txt   = f"{wind_dir} " if wind_dir else ""
+            wind_metrics = f"{dir_txt}{wind_speed:.0f} m/s{gust_txt}"
+        else:
+            wind_metrics = "–"
+        wind_class_color = _wind_class_color(wind_class)
+
         # ts: stöd både epoch (sek) och ISO-sträng
         gen_txt = ""
+        ts_stale = False
         if ts is not None:
             try:
                 if isinstance(ts, (int, float)):
@@ -72,6 +97,9 @@ def weather_box():
                 else:
                     dt = None
                 gen_txt = dt.strftime("%Y-%m-%d, %H:%M") if dt else str(ts)
+                if dt:
+                    age = datetime.now(tz=timezone.utc) - dt.astimezone(timezone.utc)
+                    ts_stale = age.total_seconds() > 6 * 3600
             except Exception:
                 gen_txt = str(ts)
 
@@ -84,6 +112,10 @@ def weather_box():
                     ],
                     className="wx-row-main",
                 ),
+                html.Div([
+                    html.Span(wind_metrics, className="wx-wind-metrics"),
+                    html.Span(wind_class or "", className=wind_class_color),
+                ], className="wx-wind"),
                 html.Ul(
                     [
                         html.Li([html.Span("Tₘₐₓ: "),  html.Span(tmax_txt)]),
@@ -92,7 +124,7 @@ def weather_box():
                     ],
                     className="wx-stats",
                 ),
-                html.Div(gen_txt, className="wx-ts"),
+                html.Div(gen_txt, className="wx-ts wx-ts-stale" if ts_stale else "wx-ts"),
             ],
             className="box weather-card",
         )

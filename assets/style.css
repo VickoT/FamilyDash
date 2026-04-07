@@ -126,9 +126,16 @@ html, body{
 .wx-now-col{ display:flex; flex-direction:column; gap:2px; }
 .wx-sub{ font-size:.85rem; opacity:.75; }
 .wx-now{ font-size:2rem; font-weight:600; }
+.wx-wind{ font-size:1.5rem; margin:2px 0; display:flex; flex-direction:column; gap:2px; }
+.wx-wind-metrics{ white-space:nowrap; }
+.wx-wind-class{ font-size:1.5rem; font-weight:600; white-space:nowrap; }
+.wx-wind-green{ color:#4caf50; }
+.wx-wind-yellow{ color:#ffeb3b; }
+.wx-wind-red{ color:#f44336; }
 .wx-stats{ list-style:none; margin:2px 0 0; padding:0; font-size:1.5rem; }
 .wx-stats li{ display:flex; justify-content:space-between; margin:2px 0; }
 .wx-ts{ font-size:.8rem; opacity:.6; margin-top:6px; }
+.wx-ts-stale{ color:#f44336; opacity:1; }
 
 .uv{ font-weight:600; }
 .uv-low{ color:#2e7d32; } .uv-medium{ color:#f9a825; } .uv-high{ color:#fb8c00; }
