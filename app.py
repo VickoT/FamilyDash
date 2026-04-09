@@ -11,6 +11,7 @@ from components.power_box import power_compute
 from components.climate_quality_box import climate_quality_compute
 from components.temperature_modal import create_modal_layout, render_temperature_tiles
 from components.anne_button import anne_button_render
+from components.lights_box import lights_render, create_lights_modal_layout
 
 from ha_client import call_service
 
@@ -23,6 +24,9 @@ import os, time
 
 LOCAL_TZ = ZoneInfo(os.getenv("LOCAL_TZ", "Europe/Stockholm"))
 ANNE_SCRIPT_ENTITY = os.getenv("HA_SCRIPT_ANNE")
+LIGHTS_SCRIPT_OFF  = os.getenv("HA_SCRIPT_LIGHTS_OFF")
+LIGHTS_SCRIPT_50   = os.getenv("HA_SCRIPT_LIGHTS_50")
+LIGHTS_SCRIPT_ON   = os.getenv("HA_SCRIPT_LIGHTS_ON")
 STATUS_TTL_SECONDS = 5
 
 app = Dash(__name__)
@@ -51,6 +55,7 @@ app.layout = html.Div(
                     ]
                 ),
                 html.Div(id="anne-button-box", className="anne-button-tile", children=anne_button_render(False)),
+                html.Div(id="lights-box",   className="box", children=lights_render()),
                 html.Div(id="kia-box",      className="box kia-card"),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
@@ -73,6 +78,9 @@ app.layout = html.Div(
         # Temperature modal
         create_modal_layout(),
 
+        # Lights modal
+        create_lights_modal_layout(),
+
         # Två olika intervaller för callback-anrop:
         # 2 minuter för fetch av tibber, kalender, väder
         # 5 sekunder för uppdatering av widgets
@@ -88,6 +96,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-climate-quality", data={}),
         dcc.Store(id="last-ts-power", data={}),
         dcc.Store(id="modal-open", data=False),
+        dcc.Store(id="lights-modal-open", data=False),
     ],
 )
 
@@ -274,6 +283,48 @@ def toggle_temperature_modal(open_clicks, close_clicks, is_open):
 def update_temperature_tiles(_n):
     """Update temperature tiles with latest sensor data"""
     return render_temperature_tiles(get_snapshot())
+
+# ---- Lights Modal toggle ------------------------------------------------
+@app.callback(
+    [Output("lights-modal-open", "data"),
+     Output("lights-modal", "style")],
+    [Input("open-lights-modal", "n_clicks"),
+     Input("close-lights-modal", "n_clicks")],
+    State("lights-modal-open", "data"),
+)
+def toggle_lights_modal(open_clicks, close_clicks, is_open):
+    from dash import callback_context
+    if not callback_context.triggered:
+        return is_open, {"display": "flex" if is_open else "none"}
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if trigger == "open-lights-modal":
+        return True, {"display": "flex"}
+    return False, {"display": "none"}
+
+
+# ---- Lights buttons ------------------------------------------------------
+@app.callback(
+    Output("lights-status-msg", "children"),
+    [Input("light-btn-off", "n_clicks"),
+     Input("light-btn-50",  "n_clicks"),
+     Input("light-btn-on",  "n_clicks")],
+    prevent_initial_call=True,
+)
+def cb_lights_buttons(_off, _50, _on):
+    from dash import ctx
+    BUTTON_MAP = {
+        "light-btn-off": LIGHTS_SCRIPT_OFF,
+        "light-btn-50":  LIGHTS_SCRIPT_50,
+        "light-btn-on":  LIGHTS_SCRIPT_ON,
+    }
+    entity = BUTTON_MAP.get(ctx.triggered_id)
+    if not entity:
+        return f"Saknar konfiguration för {ctx.triggered_id}"
+    success, error_text = call_service("script", "turn_on", {"entity_id": entity})
+    if success:
+        return ""
+    return error_text or "Fel vid anrop"
+
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=8050)

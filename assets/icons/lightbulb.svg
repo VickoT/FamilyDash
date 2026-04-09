@@ -1,0 +1,19 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 24 42 C 18 38 14 32 14 26 A 18 18 0 1 1 50 26 C 50 32 46 38 40 42 Z"/>
+    <path d="M 22 18 Q 20 24 22 30" stroke-width="2.5"/>
+    <line x1="24" y1="42" x2="24" y2="46"/>
+    <line x1="40" y1="42" x2="40" y2="46"/>
+    <line x1="24" y1="46" x2="40" y2="46"/>
+    <line x1="24" y1="50" x2="40" y2="50"/>
+    <line x1="26" y1="54" x2="38" y2="54"/>
+    <line x1="29" y1="57" x2="35" y2="57"/>
+    <line x1="32" y1="3"  x2="32" y2="8"/>
+    <line x1="46" y1="8"  x2="43" y2="12"/>
+    <line x1="58" y1="26" x2="54" y2="26"/>
+    <line x1="46" y1="44" x2="43" y2="41"/>
+    <line x1="18" y1="44" x2="21" y2="41"/>
+    <line x1="6"  y1="26" x2="10" y2="26"/>
+    <line x1="18" y1="8"  x2="21" y2="12"/>
+  </g>
+</svg>
