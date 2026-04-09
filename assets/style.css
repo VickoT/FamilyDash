@@ -308,7 +308,7 @@ html, body{
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 12px 12px 36px;
+  padding: 12px;
   gap: 16px;
   flex: 1;
 }
@@ -431,40 +431,6 @@ html, body{
 /**********************************************************
  * 9) Temperature Modal
  **********************************************************/
-/* Modal trigger button in climate widget */
-.modal-trigger-btn {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius);
-  color: var(--fg-text);
-  font-size: 1.5rem;
-  font-weight: 300;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.modal-trigger-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateX(-50%) scale(1.05);
-}
-
-.modal-trigger-btn:active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateX(-50%) scale(0.95);
-}
 
 /* Modal overlay */
 .modal {

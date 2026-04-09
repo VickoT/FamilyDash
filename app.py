@@ -48,10 +48,12 @@ app.layout = html.Div(
                 html.Div(id="washer-box",   className="box washer-card"),
                 # Climate widget with modal button
                 html.Div(
+                    id="open-temp-modal",
                     className="climate-wrapper tile",
+                    n_clicks=0,
+                    style={"cursor": "pointer"},
                     children=[
                         html.Div(id="climate-quality-box", className="climate-content"),
-                        html.Button("+", id="open-temp-modal", className="modal-trigger-btn", n_clicks=0),
                     ]
                 ),
                 html.Div(id="anne-button-box", className="anne-button-tile", children=anne_button_render(False)),
