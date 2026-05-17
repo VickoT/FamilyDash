@@ -8,4 +8,5 @@ __pycache__/
 client_secret_*.json
 token.pickle
 mosquitto/data/mosquitto.db
+.playwright-mcp/
 
