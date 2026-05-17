@@ -6,7 +6,6 @@ from components.tibber_plot import make_tibber_figure
 from components.weather_box import weather_box
 from components.washer_box import  washer_compute
 from components.dryer_box import dryer_compute
-from components.kia_box import kia_compute
 from components.power_box import power_compute
 from components.climate_quality_box import climate_quality_compute
 from components.temperature_modal import create_modal_layout, render_temperature_tiles
@@ -58,7 +57,6 @@ app.layout = html.Div(
                 ),
                 html.Div(id="anne-button-box", className="anne-button-tile", children=anne_button_render(False)),
                 html.Div(id="lights-box",   className="box", children=lights_render()),
-                html.Div(id="kia-box",      className="box kia-card"),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
                 html.Div(id="heartbeat-box", className="tile"),
@@ -94,7 +92,6 @@ app.layout = html.Div(
         dcc.Store(id="anne-button-status", data=None),
         dcc.Store(id="last-ts-washer", data={}),
         dcc.Store(id="last-ts-dryer",  data={}),
-        dcc.Store(id="last-ts-kia", data={}),
         dcc.Store(id="last-ts-climate-quality", data={}),
         dcc.Store(id="last-ts-power", data={}),
         dcc.Store(id="modal-open", data=False),
@@ -216,17 +213,6 @@ def refresh_heartbeat(_n):
         html.Div(f"Senast: {ts_str}"),
         html.Div(f"Status: {status}"),
     ])
-
-# ---- KIA ---------------------------------------------------------------
-@app.callback(
-    [Output("kia-box", "children"),
-     Output("kia-box", "className"),
-     Output("last-ts-kia", "data")],
-    Input("tick", "n_intervals"),
-    State("last-ts-kia", "data"),
-)
-def cb_kia(_n, last_ts):
-    return kia_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 # ---- Climate + Air Quality (combined) -------------------------------------
 @app.callback(

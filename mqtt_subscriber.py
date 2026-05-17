@@ -36,7 +36,6 @@ TOPIC_CALENDAR_BDAY: str  = "home/calendar/fodelsedagar/next370d"
 TOPIC_WASHER: str         = "home/appliance/washer/state"
 TOPIC_DRYER: str          = "home/appliance/dryer/state"
 TOPIC_HEARTBEAT: str      = "home/system/heartbeat"
-TOPIC_CAR: str            = "home/car/state"
 TOPIC_SHELLY_BHT: str     = "home/env/livingroom/ht/state"
 TOPIC_POWER: str          = "home/tibber/power"
 TOPIC_TIBBER_FORECAST: str    = "home/tibber/forecast/json"
@@ -67,7 +66,6 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     "dryer":        {"status": None, "time_left": None, "ts": None},
     "heartbeat":    {"last": None, "ts": None},
     "shelly":       {"tC": None, "rh": None, "online": None, "ts": None},
-    "car":          {"battery": None, "range": None, "ts": None},
     "shelly_bht":   {"t": None, "rh": None, "ts": None},
     "pulse_power":  {"power": None, "power_raw": None, "power_smooth": None, "energy_day_kwh": None, "cost_day": None, "ts": None},
     "airquality_raw": {
@@ -189,13 +187,6 @@ def _parse_shelly(topic: str, payload: str) -> None:
     if any(k in low for k in ("/hum", "/humidity", "/rh")):
         _set("shelly", rh=_to_float(payload)); return
 
-def _parse_car(payload: str) -> None:
-    d = _json_payload(payload)
-    if not isinstance(d, dict): return
-    _set("car",
-         battery=_to_int(d.get("battery")),
-         range=_to_int(d.get("range")))
-
 def _parse_shelly_bht(payload: str) -> None:
     d = _json_payload(payload)
     if not isinstance(d, dict): return
@@ -299,7 +290,6 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_DRYER, qos=0)
     cli.subscribe(TOPIC_HEARTBEAT, qos=0)
     cli.subscribe(TOPIC_SHELLY, qos=0)
-    cli.subscribe(TOPIC_CAR, qos=0)
     cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
     cli.subscribe(TOPIC_POWER, qos=0)
     cli.subscribe(TOPIC_AIRQUALITY_RAW, qos=0)
@@ -314,7 +304,7 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
 
     print("[mqtt] subscribed:",
           TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
-          TOPIC_CAR, TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
+          TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
           TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST,
           TOPIC_ENV_OFFICE, TOPIC_ENV_LAUNDRY, TOPIC_ENV_BEDROOM)
 
@@ -333,7 +323,6 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic == TOPIC_DRYER:            _parse_dryer(payload);         return
     if msg.topic == TOPIC_HEARTBEAT:        _parse_heartbeat(payload);     return
     if msg.topic.startswith(SHELLY_PREFIX): _parse_shelly(msg.topic, payload); return
-    if msg.topic == TOPIC_CAR:              _parse_car(payload);           return
     if msg.topic == TOPIC_SHELLY_BHT:       _parse_shelly_bht(payload);    return
     if msg.topic == TOPIC_POWER:            _parse_power(payload);         return
     if msg.topic == TOPIC_TIBBER_FORECAST:  _parse_tibber_forecast(payload); return
