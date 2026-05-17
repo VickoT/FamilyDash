@@ -21,3 +21,6 @@ services:
       HA_SCRIPT_ANNE: script.find_my_phone
       HA_TIMEOUT: "5"
       HA_TOKEN: ${HA_TOKEN}
+      HA_SCRIPT_MARKIS_OPEN:  script.markis_ut
+      HA_SCRIPT_MARKIS_STOP:  script.markis_stopp
+      HA_SCRIPT_MARKIS_CLOSE: script.markis_in

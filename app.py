@@ -11,6 +11,7 @@ from components.climate_quality_box import climate_quality_compute
 from components.temperature_modal import create_modal_layout, render_temperature_tiles
 from components.anne_button import anne_button_render
 from components.lights_box import lights_render, create_lights_modal_layout
+from components.markis_box import markis_render, create_markis_modal_layout
 
 from ha_client import call_service
 
@@ -26,6 +27,9 @@ ANNE_SCRIPT_ENTITY = os.getenv("HA_SCRIPT_ANNE")
 LIGHTS_SCRIPT_OFF  = os.getenv("HA_SCRIPT_LIGHTS_OFF")
 LIGHTS_SCRIPT_50   = os.getenv("HA_SCRIPT_LIGHTS_50")
 LIGHTS_SCRIPT_ON   = os.getenv("HA_SCRIPT_LIGHTS_ON")
+MARKIS_SCRIPT_OPEN  = os.getenv("HA_SCRIPT_MARKIS_OPEN")
+MARKIS_SCRIPT_STOP  = os.getenv("HA_SCRIPT_MARKIS_STOP")
+MARKIS_SCRIPT_CLOSE = os.getenv("HA_SCRIPT_MARKIS_CLOSE")
 STATUS_TTL_SECONDS = 5
 
 app = Dash(__name__)
@@ -57,6 +61,7 @@ app.layout = html.Div(
                 ),
                 html.Div(id="anne-button-box", className="anne-button-tile", children=anne_button_render(False)),
                 html.Div(id="lights-box",   className="box", children=lights_render()),
+                html.Div(id="markis-box",   className="box", children=markis_render()),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
                 html.Div(id="heartbeat-box", className="tile"),
@@ -81,6 +86,9 @@ app.layout = html.Div(
         # Lights modal
         create_lights_modal_layout(),
 
+        # Markis modal
+        create_markis_modal_layout(),
+
         # Två olika intervaller för callback-anrop:
         # 2 minuter för fetch av tibber, kalender, väder
         # 5 sekunder för uppdatering av widgets
@@ -96,6 +104,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-power", data={}),
         dcc.Store(id="modal-open", data=False),
         dcc.Store(id="lights-modal-open", data=False),
+        dcc.Store(id="markis-modal-open", data=False),
     ],
 )
 
@@ -304,6 +313,48 @@ def cb_lights_buttons(_off, _50, _on):
         "light-btn-off": LIGHTS_SCRIPT_OFF,
         "light-btn-50":  LIGHTS_SCRIPT_50,
         "light-btn-on":  LIGHTS_SCRIPT_ON,
+    }
+    entity = BUTTON_MAP.get(ctx.triggered_id)
+    if not entity:
+        return f"Saknar konfiguration för {ctx.triggered_id}"
+    success, error_text = call_service("script", "turn_on", {"entity_id": entity})
+    if success:
+        return ""
+    return error_text or "Fel vid anrop"
+
+
+# ---- Markis Modal toggle ------------------------------------------------
+@app.callback(
+    [Output("markis-modal-open", "data"),
+     Output("markis-modal", "style")],
+    [Input("open-markis-modal", "n_clicks"),
+     Input("close-markis-modal", "n_clicks")],
+    State("markis-modal-open", "data"),
+)
+def toggle_markis_modal(open_clicks, close_clicks, is_open):
+    from dash import callback_context
+    if not callback_context.triggered:
+        return is_open, {"display": "flex" if is_open else "none"}
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if trigger == "open-markis-modal":
+        return True, {"display": "flex"}
+    return False, {"display": "none"}
+
+
+# ---- Markis buttons -----------------------------------------------------
+@app.callback(
+    Output("markis-status-msg", "children"),
+    [Input("markis-btn-open",  "n_clicks"),
+     Input("markis-btn-stop",  "n_clicks"),
+     Input("markis-btn-close", "n_clicks")],
+    prevent_initial_call=True,
+)
+def cb_markis_buttons(_open, _stop, _close):
+    from dash import ctx
+    BUTTON_MAP = {
+        "markis-btn-open":  MARKIS_SCRIPT_OPEN,
+        "markis-btn-stop":  MARKIS_SCRIPT_STOP,
+        "markis-btn-close": MARKIS_SCRIPT_CLOSE,
     }
     entity = BUTTON_MAP.get(ctx.triggered_id)
     if not entity:

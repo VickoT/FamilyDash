@@ -170,7 +170,7 @@ html, body{
   grid-auto-flow: row;                      /* behåll ordningen */
   grid-template-areas:
     "weather washer  climate shelly  power"
-    "weather dryer   lights  kia     heartbeat";
+    "weather dryer   lights  markis  heartbeat";
 }
 
 /* bind rutor till ytor */
@@ -184,6 +184,10 @@ html, body{
 .lights-trigger-btn   { width:100%; height:100%; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-lg); transition: background .15s; }
 .lights-trigger-btn:hover { background: rgba(255,255,255,.06); }
 #lights-box .lights-icon { width: 90px; height: 90px; display: block; }
+#markis-box           { grid-area: markis; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border); display:flex; align-items:center; justify-content:center; }
+.markis-trigger-btn   { width:100%; height:100%; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-lg); transition: background .15s; }
+.markis-trigger-btn:hover { background: rgba(255,255,255,.06); }
+#markis-box .markis-icon { width: 90px; height: 90px; display: block; }
 #heartbeat-box        { grid-area: heartbeat; }
 
 /* widgets that span 2 rows */
@@ -517,6 +521,41 @@ html, body{
 .light-btn:active { background: var(--accent-active); color: #000; transform: scale(0.96); }
 
 .lights-status-msg {
+  font-size: 0.85rem;
+  color: #f66;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+/* Markis modal */
+.markis-modal-content {
+  min-width: 520px;
+  padding: 28px;
+}
+
+.markis-modal-buttons {
+  display: flex;
+  gap: 18px;
+  padding: 12px 0 20px;
+}
+
+.markis-btn {
+  flex: 1;
+  padding: 40px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-text);
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+
+.markis-btn:hover  { background: rgba(255, 255, 255, 0.12); }
+.markis-btn:active { background: var(--accent-active); color: #000; transform: scale(0.96); }
+
+.markis-status-msg {
   font-size: 0.85rem;
   color: #f66;
   min-height: 1.2em;
