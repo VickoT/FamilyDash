@@ -12,12 +12,12 @@ from components.temperature_modal import create_modal_layout, render_temperature
 from components.anne_button import anne_button_render
 from components.lights_box import lights_render, create_lights_modal_layout
 from components.markis_box import markis_render, create_markis_modal_layout
+from components.automower_box import automower_compute
 
 from ha_client import call_service
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
-from datetime import datetime, timezone
 from typing import Any, cast
 from zoneinfo import ZoneInfo
 import os, time
@@ -64,7 +64,7 @@ app.layout = html.Div(
                 html.Div(id="markis-box",   className="box", children=markis_render()),
                 html.Div(id="dryer-box",    className="dryer-card"),
                 html.Div(id="power-box",    className="box power-card"),
-                html.Div(id="heartbeat-box", className="tile"),
+                html.Div(id="automower-box", className="box appliance-card automower-card"),
             ],
         ),
 
@@ -102,6 +102,7 @@ app.layout = html.Div(
         dcc.Store(id="last-ts-dryer",  data={}),
         dcc.Store(id="last-ts-climate-quality", data={}),
         dcc.Store(id="last-ts-power", data={}),
+        dcc.Store(id="last-ts-automower", data={}),
         dcc.Store(id="modal-open", data=False),
         dcc.Store(id="lights-modal-open", data=False),
         dcc.Store(id="markis-modal-open", data=False),
@@ -200,28 +201,16 @@ def refresh_anne_button(n_clicks, _tick, pressed_at, status_state):
 def cb_dryer(_n, last_ts):
     return dryer_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
-# ---- Heartbeat ----------------------------------------------------------
+# ---- Automower ----------------------------------------------------------
 @app.callback(
-    Output("heartbeat-box", "children"),
+    [Output("automower-box", "children"),
+     Output("automower-box", "className"),
+     Output("last-ts-automower", "data")],
     Input("tick", "n_intervals"),
+    State("last-ts-automower", "data"),
 )
-def refresh_heartbeat(_n):
-    snap = get_snapshot()
-    hb = snap.get("heartbeat", {})
-    ts = hb.get("ts")
-
-    if not ts:
-        return html.Div([html.Div("Heartbeat"), html.Div("Väntar …")])
-
-    age = time.time() - ts
-    ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone(LOCAL_TZ).strftime("%H:%M:%S")
-    status = "OK" if age <= 30 else f"Ingen puls på {int(age)}s"
-
-    return html.Div([
-        html.Div("Heartbeat"),
-        html.Div(f"Senast: {ts_str}"),
-        html.Div(f"Status: {status}"),
-    ])
+def cb_automower(_n, last_ts):
+    return automower_compute(get_snapshot(), LOCAL_TZ, last_ts)
 
 # ---- Climate + Air Quality (combined) -------------------------------------
 @app.callback(

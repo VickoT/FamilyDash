@@ -35,7 +35,7 @@ TOPIC_CALENDAR_BDAY: str  = "home/calendar/fodelsedagar/next370d"
 
 TOPIC_WASHER: str         = "home/appliance/washer/state"
 TOPIC_DRYER: str          = "home/appliance/dryer/state"
-TOPIC_HEARTBEAT: str      = "home/system/heartbeat"
+TOPIC_AUTOMOWER: str      = "home/appliance/automower/state"
 TOPIC_SHELLY_BHT: str     = "home/env/livingroom/ht/state"
 TOPIC_POWER: str          = "home/tibber/power"
 TOPIC_TIBBER_FORECAST: str    = "home/tibber/forecast/json"
@@ -64,7 +64,7 @@ _snapshot: Dict[str, Dict[str, Any]] = {
     },
     "washer":       {"status": None, "time_to_end_min": None, "ts": None},
     "dryer":        {"status": None, "time_left": None, "ts": None},
-    "heartbeat":    {"last": None, "ts": None},
+    "automower":    {"name": None, "activity": None, "battery": None, "progress": None, "ts": None},
     "shelly":       {"tC": None, "rh": None, "online": None, "ts": None},
     "shelly_bht":   {"t": None, "rh": None, "ts": None},
     "pulse_power":  {"power": None, "power_raw": None, "power_smooth": None, "energy_day_kwh": None, "cost_day": None, "ts": None},
@@ -168,8 +168,14 @@ def _parse_dryer(payload: str) -> None:
         time_left = payload
     _set("dryer", status=status, time_left=_to_int(time_left))
 
-def _parse_heartbeat(payload: str) -> None:
-    _set("heartbeat", last=payload)
+def _parse_automower(payload: str) -> None:
+    d = _json_payload(payload)
+    if not isinstance(d, dict): return
+    _set("automower",
+         name=d.get("name"),
+         activity=d.get("activity"),
+         battery=_to_int(d.get("battery")),
+         progress=_to_int(d.get("progress")))
 
 def _parse_shelly(topic: str, payload: str) -> None:
     if topic.endswith("/online"):
@@ -288,7 +294,7 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
 
     cli.subscribe(TOPIC_WASHER, qos=0)
     cli.subscribe(TOPIC_DRYER, qos=0)
-    cli.subscribe(TOPIC_HEARTBEAT, qos=0)
+    cli.subscribe(TOPIC_AUTOMOWER, qos=0)
     cli.subscribe(TOPIC_SHELLY, qos=0)
     cli.subscribe(TOPIC_SHELLY_BHT, qos=0)
     cli.subscribe(TOPIC_POWER, qos=0)
@@ -303,7 +309,7 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
     cli.subscribe(TOPIC_ENV_BEDROOM, qos=0)
 
     print("[mqtt] subscribed:",
-          TOPIC_WASHER, TOPIC_DRYER, TOPIC_HEARTBEAT, TOPIC_SHELLY,
+          TOPIC_WASHER, TOPIC_DRYER, TOPIC_AUTOMOWER, TOPIC_SHELLY,
           TOPIC_SHELLY_BHT, TOPIC_POWER, TOPIC_AIRQUALITY_RAW,
           TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST,
           TOPIC_ENV_OFFICE, TOPIC_ENV_LAUNDRY, TOPIC_ENV_BEDROOM)
@@ -321,7 +327,7 @@ def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
     if msg.topic == TOPIC_CALENDAR_BDAY:    _parse_calendar_bday(payload); return
     if msg.topic == TOPIC_WASHER:           _parse_washer(payload);        return
     if msg.topic == TOPIC_DRYER:            _parse_dryer(payload);         return
-    if msg.topic == TOPIC_HEARTBEAT:        _parse_heartbeat(payload);     return
+    if msg.topic == TOPIC_AUTOMOWER:        _parse_automower(payload);     return
     if msg.topic.startswith(SHELLY_PREFIX): _parse_shelly(msg.topic, payload); return
     if msg.topic == TOPIC_SHELLY_BHT:       _parse_shelly_bht(payload);    return
     if msg.topic == TOPIC_POWER:            _parse_power(payload);         return

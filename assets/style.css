@@ -170,7 +170,7 @@ html, body{
   grid-auto-flow: row;                      /* behåll ordningen */
   grid-template-areas:
     "weather washer  climate shelly  power"
-    "weather dryer   lights  markis  heartbeat";
+    "weather dryer   lights  markis  automower";
 }
 
 /* bind rutor till ytor */
@@ -188,7 +188,15 @@ html, body{
 .markis-trigger-btn   { width:100%; height:100%; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius: var(--radius-lg); transition: background .15s; }
 .markis-trigger-btn:hover { background: rgba(255,255,255,.06); }
 #markis-box .markis-icon { width: 90px; height: 90px; display: block; }
-#heartbeat-box        { grid-area: heartbeat; }
+#automower-box        { grid-area: automower; }
+#automower-box{ gap:2px; }
+#automower-box .automower-svg{ width:88px; height:88px; margin-bottom:-12px; }
+#automower-box .timestamp{ font-size:.75rem; color:#aaa; margin-top:2px; }
+#automower-box .timestamp.wx-ts-stale{ color:#ff5252; font-weight:700; }
+.automower-status{ font-size:1.25rem; font-weight:700; }
+.automower-status.docked{ color:#4FC3F7; }
+.automower-status.mowing{ color:#39ff14; }
+.automower-status.error { color:#ff5252; }
 
 /* widgets that span 2 rows */
 #weather-box {
