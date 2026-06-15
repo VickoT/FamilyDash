@@ -289,6 +289,7 @@ def _parse_weather(payload: str) -> None:
 def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
                 reason_code: mqtt.ReasonCodes, _props: mqtt.Properties | None = None) -> None:
     print(f"[mqtt] connected reason_code={reason_code}, id={MQTT_CLIENT}")
+    _mark_alive()
     status_topic = f"clients/{MQTT_CLIENT}/status"
     cli.publish(status_topic, payload="online", qos=1, retain=True)
 
@@ -314,11 +315,52 @@ def _on_connect(cli: mqtt.Client, _ud: Any, _flags: Any,
           TOPIC_CALENDAR_FAM, TOPIC_CALENDAR_BDAY, TOPIC_WEATHER, TOPIC_TIBBER_FORECAST,
           TOPIC_ENV_OFFICE, TOPIC_ENV_LAUNDRY, TOPIC_ENV_BEDROOM)
 
-def _on_disconnect(cli: mqtt.Client, _ud: Any, reason_code: mqtt.ReasonCodes,
+# --- Liveness watchdog --------------------------------------------------
+# Paho's loop_start auto-reconnects on graceful disconnects (broker FIN,
+# socket EOF). It can't catch a *half-open* socket where the kernel never
+# sees EOF — e.g. a Wi-Fi blip after which the broker has timed us out
+# but our TCP stack still thinks the connection is up. In that state
+# on_disconnect never fires and is_connected() still returns True, yet no
+# messages flow. The watchdog detects that by tracking the last broker
+# traffic timestamp and forcing a reconnect when it goes stale.
+_last_msg_ts: float = 0.0
+WATCHDOG_INTERVAL_S: float = 60.0
+WATCHDOG_STALE_S: float = 180.0  # no broker traffic for this long -> force reconnect
+
+def _mark_alive() -> None:
+    global _last_msg_ts
+    _last_msg_ts = time.monotonic()
+
+def _watchdog_loop(cli: mqtt.Client) -> None:
+    while True:
+        time.sleep(WATCHDOG_INTERVAL_S)
+        try:
+            stale = time.monotonic() - _last_msg_ts
+            if stale > WATCHDOG_STALE_S:
+                print(f"[mqtt] watchdog: no broker traffic for {stale:.0f}s "
+                      f"(is_connected={cli.is_connected()}) - forcing reconnect")
+                # Bump _last_msg_ts so we don't re-fire while the reconnect
+                # handshake is still in flight; a real message (or the next
+                # stale interval) will move things forward from here.
+                _mark_alive()
+                try:
+                    cli.reconnect()
+                except Exception as e:
+                    print(f"[mqtt] watchdog: reconnect() raised: {e}")
+        except Exception as e:
+            print(f"[mqtt] watchdog: unexpected error: {e}")
+
+def _on_disconnect(cli: mqtt.Client, _ud: Any, _flags: Any,
+                   reason_code: mqtt.ReasonCodes,
                    _props: mqtt.Properties | None = None) -> None:
+    # Paho v2 CallbackAPIVersion.VERSION2 calls this with 5 positional args:
+    # (client, userdata, disconnect_flags, reason_code, properties).
     print(f"[mqtt] disconnected reason_code={reason_code}, id={MQTT_CLIENT}")
+    # Recovery is handled by Paho's reconnect_delay_set (for drops Paho
+    # observes) and _watchdog_loop (for the wedged-loop / half-open case).
 
 def _on_message(_cli: mqtt.Client, _ud: Any, msg: mqtt.MQTTMessage) -> None:
+    _mark_alive()
     payload = msg.payload.decode("utf-8", errors="replace").strip()
     if DEBUG:
         print(f"[mqtt] {msg.topic} <- {payload}")
@@ -361,9 +403,23 @@ def start() -> None:
             cli.on_disconnect = _on_disconnect
             cli.on_message = _on_message
 
+            # Built-in auto-reconnect for drops Paho observes (broker FIN,
+            # socket EOF, keepalive failure that the loop notices).
+            cli.reconnect_delay_set(min_delay=1, max_delay=120)
+
+            # Seed liveness so the watchdog doesn't fire before the first
+            # message arrives.
+            _mark_alive()
+
             cli.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
             cli.loop_start()
             print("[mqtt] loop started")
+
+            # Independent watchdog: catches the half-open-socket case where
+            # Paho's loop is stuck on a dead recv() and never observes the
+            # disconnect itself.
+            threading.Thread(target=_watchdog_loop, args=(cli,),
+                             name="mqtt-watchdog", daemon=True).start()
         except Exception as e:
             print(f"[mqtt] ERROR: {e}")
 
