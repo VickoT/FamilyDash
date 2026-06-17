@@ -273,7 +273,7 @@ def toggle_temperature_modal(open_clicks, close_clicks, is_open):
 )
 def update_temperature_tiles(_n):
     """Update temperature tiles with latest sensor data"""
-    return render_temperature_tiles(get_snapshot())
+    return render_temperature_tiles(get_snapshot(), LOCAL_TZ)
 
 # ---- Lights Modal toggle ------------------------------------------------
 @app.callback(

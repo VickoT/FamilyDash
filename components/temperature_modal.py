@@ -7,6 +7,10 @@ Uses MQTT snapshot data to show real-time sensor readings.
 """
 
 from dash import html
+from datetime import datetime, timezone
+import time
+
+_STALE_SECONDS = 3600  # 1 hour -> tidsstämpeln blir röd om mätningen är äldre
 
 
 # Room configuration
@@ -18,7 +22,9 @@ ROOMS = [
 ]
 
 
-def create_temperature_tile(room_name: str, icon: str, temperature: float | None, humidity: float | None) -> html.Div:
+def create_temperature_tile(room_name: str, icon: str, temperature: float | None,
+                            humidity: float | None, ts: int | None = None,
+                            local_tz=None) -> html.Div:
     """
     Create a single temperature tile.
 
@@ -27,6 +33,8 @@ def create_temperature_tile(room_name: str, icon: str, temperature: float | None
         icon: Emoji icon for the room
         temperature: Temperature in Celsius (None if no data)
         humidity: Relative humidity percentage (None if no data)
+        ts: Epoch seconds when the reading was received (None if no data)
+        local_tz: Timezone for formatting the timestamp
 
     Returns:
         html.Div: Temperature tile component
@@ -39,15 +47,23 @@ def create_temperature_tile(room_name: str, icon: str, temperature: float | None
     has_data = isinstance(temperature, (int, float))
     tile_class = "temp-tile" if has_data else "temp-tile no-data"
 
-    return html.Div(
-        className=tile_class,
-        children=[
-            html.Div(icon, className="room-icon"),
-            html.Div(room_name, className="room-name"),
-            html.Div(temp_txt, className="room-temp"),
-            html.Div(humidity_txt, className="room-humidity"),
-        ]
-    )
+    children = [
+        html.Div(icon, className="room-icon"),
+        html.Div(room_name, className="room-name"),
+        html.Div(temp_txt, className="room-temp"),
+        html.Div(humidity_txt, className="room-humidity"),
+    ]
+
+    # Diskret tidsstämpel (när mätningen är ifrån), som på övriga tiles
+    if ts:
+        when = datetime.fromtimestamp(ts, tz=timezone.utc)
+        if local_tz is not None:
+            when = when.astimezone(local_tz)
+        stale = (time.time() - ts) > _STALE_SECONDS
+        ts_class = "timestamp wx-ts-stale" if stale else "timestamp"
+        children.append(html.Div(when.strftime("%Y-%m-%d, %H:%M"), className=ts_class))
+
+    return html.Div(className=tile_class, children=children)
 
 
 def create_modal_layout() -> html.Div:
@@ -81,12 +97,13 @@ def create_modal_layout() -> html.Div:
     )
 
 
-def render_temperature_tiles(snapshot: dict | None) -> list[html.Div]:
+def render_temperature_tiles(snapshot: dict | None, local_tz=None) -> list[html.Div]:
     """
     Render all temperature tiles from snapshot data.
 
     Args:
         snapshot: MQTT snapshot containing room sensor data
+        local_tz: Timezone for formatting the per-tile timestamp
 
     Returns:
         list[html.Div]: List of temperature tile components
@@ -102,7 +119,9 @@ def render_temperature_tiles(snapshot: dict | None) -> list[html.Div]:
             room_name=room["name"],
             icon=room["icon"],
             temperature=temperature,
-            humidity=humidity
+            humidity=humidity,
+            ts=room_data.get("ts"),
+            local_tz=local_tz,
         )
         tiles.append(tile)
 
