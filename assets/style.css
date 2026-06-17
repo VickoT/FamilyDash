@@ -57,6 +57,7 @@ html, body{
   scroll-snap-type: x mandatory;
   scroll-behavior:smooth;
   -webkit-overflow-scrolling:touch;
+  touch-action:none;            /* vi hanterar svepet själva i pager.js */
 }
 .pager::-webkit-scrollbar{ display:none; }   /* göm scrollbar i kiosk */
 
