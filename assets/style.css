@@ -501,6 +501,20 @@ html, body{
   color: var(--fg-text);
 }
 
+/* Energy devices modal */
+.energy-modal-content {
+  min-width: 720px;
+  width: 80vw;
+  max-width: 1100px;
+}
+.energy-modal-content .modal-header {
+  justify-content: space-between;
+}
+.energy-modal-content .modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
 /* Lights modal */
 .lights-modal-content {
   min-width: 380px;

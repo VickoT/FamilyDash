@@ -13,8 +13,9 @@ from components.anne_button import anne_button_render
 from components.lights_box import lights_render, create_lights_modal_layout
 from components.markis_box import markis_render, create_markis_modal_layout
 from components.automower_box import automower_compute
+from components.energy_modal import create_energy_modal_layout, make_energy_figure, make_energy_title, stat_ids
 
-from ha_client import call_service
+from ha_client import call_service, get_energy_today
 
 # --- MQTT helper ---
 from mqtt_subscriber import start as mqtt_start, get_snapshot
@@ -63,7 +64,7 @@ app.layout = html.Div(
                 html.Div(id="lights-box",   className="box", children=lights_render()),
                 html.Div(id="markis-box",   className="box", children=markis_render()),
                 html.Div(id="dryer-box",    className="dryer-card"),
-                html.Div(id="power-box",    className="box power-card"),
+                html.Div(id="power-box",    className="box power-card", n_clicks=0, style={"cursor": "pointer"}),
                 html.Div(id="automower-box", className="box appliance-card automower-card"),
             ],
         ),
@@ -89,6 +90,9 @@ app.layout = html.Div(
         # Markis modal
         create_markis_modal_layout(),
 
+        # Energy devices modal
+        create_energy_modal_layout(),
+
         # Två olika intervaller för callback-anrop:
         # 2 minuter för fetch av tibber, kalender, väder
         # 5 sekunder för uppdatering av widgets
@@ -106,6 +110,7 @@ app.layout = html.Div(
         dcc.Store(id="modal-open", data=False),
         dcc.Store(id="lights-modal-open", data=False),
         dcc.Store(id="markis-modal-open", data=False),
+        dcc.Store(id="energy-modal-open", data=False),
     ],
 )
 
@@ -352,6 +357,39 @@ def cb_markis_buttons(_open, _stop, _close):
     if success:
         return ""
     return error_text or "Fel vid anrop"
+
+
+# ---- Energy devices modal -----------------------------------------------
+@app.callback(
+    [Output("energy-modal-open", "data"),
+     Output("energy-modal", "style")],
+    [Input("power-box", "n_clicks"),
+     Input("close-energy-modal", "n_clicks")],
+    State("energy-modal-open", "data"),
+)
+def toggle_energy_modal(open_clicks, close_clicks, is_open):
+    from dash import callback_context
+    if not callback_context.triggered:
+        return is_open, {"display": "flex" if is_open else "none"}
+    trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if trigger == "power-box":
+        return True, {"display": "flex"}
+    return False, {"display": "none"}
+
+
+@app.callback(
+    [Output("energy-devices-graph", "figure"),
+     Output("energy-modal-title", "children")],
+    [Input("energy-modal-open", "data"),
+     Input("interval-component", "n_intervals")],
+)
+def update_energy_graph(is_open, _n):
+    # Hämta bara från HA när modalen är öppen (annars onödig websocket-trafik).
+    if not is_open:
+        return no_update, no_update
+    data = get_energy_today(stat_ids())
+    total_today = (get_snapshot().get("pulse_power") or {}).get("energy_day_kwh")
+    return make_energy_figure(data, total_today), make_energy_title(data, total_today)
 
 
 if __name__ == "__main__":
