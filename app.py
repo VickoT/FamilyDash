@@ -43,8 +43,13 @@ app = Dash(__name__)
 mqtt_start()
 
 app.layout = html.Div(
-    className="app-wrapper",
     children=[
+      html.Div(
+        className="pager",
+        children=[
+          html.Div(
+            className="app-wrapper screen",
+            children=[
         html.Div(id="calendar-box", className="calendar box", children=calendar_box()),
 
         html.Div(
@@ -82,6 +87,25 @@ app.layout = html.Div(
                 style={"height": "100%"},
                 config={"displayModeBar": False},
             ),
+        ),
+            ],
+          ),
+          html.Div(
+            className="screen screen-2",
+            children=[
+                html.Div("Skärm 2", className="screen2-title"),
+                html.Div("Tom – fylls senare", className="screen2-sub"),
+            ],
+          ),
+        ],
+      ),
+
+        html.Div(
+            className="pager-dots",
+            children=[
+                html.Span(className="pager-dot active"),
+                html.Span(className="pager-dot"),
+            ],
         ),
 
         # Temperature modal

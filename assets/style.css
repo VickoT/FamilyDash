@@ -46,6 +46,57 @@ html, body{
 .timestamp { font-size:.8rem; opacity:.65; margin-top:4px; display:block; }
 
 /**********************************************************
+ * 1b) Swipeable pager (touch: swipe left/right between screens)
+ **********************************************************/
+.pager{
+  width:1280px;
+  height:720px;
+  display:flex;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.pager::-webkit-scrollbar{ display:none; }   /* göm scrollbar i kiosk */
+
+.screen{
+  flex:0 0 1280px;
+  width:1280px;
+  height:720px;
+  scroll-snap-align:start;
+}
+
+/* Skärm 2 – platshållare */
+.screen-2{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.screen2-title{ font-size:2rem; font-weight:700; opacity:.55; }
+.screen2-sub{ font-size:1rem; opacity:.35; }
+
+/* Sid-indikator (punkter) */
+.pager-dots{
+  position:fixed;
+  bottom:8px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+  z-index:50;
+}
+.pager-dot{
+  width:8px; height:8px;
+  border-radius:50%;
+  background:rgba(255,255,255,.25);
+  transition:background .2s;
+}
+.pager-dot.active{ background:rgba(255,255,255,.85); }
+
+/**********************************************************
  * 2) Top-level grid
  **********************************************************/
 .app-wrapper{
