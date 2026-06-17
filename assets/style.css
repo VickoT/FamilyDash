@@ -584,12 +584,64 @@ html, body{
   text-align: center;
 }
 
-/* Temperature tiles container */
-.temp-tiles-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* Temperature modal sizes to its (fixed, square) content */
+.temp-modal-content {
+  width: auto;
+  min-width: auto;
+}
+
+/* Temperature modal body: heat-pump controls | room tiles */
+.temp-modal-body {
+  display: flex;
   gap: 16px;
+  align-items: stretch;
   padding: 10px 0;
+}
+
+/* Heat pump control buttons (left column) */
+.heatpump-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 0 0 135px;
+}
+.heatpump-btn {
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  color: var(--fg-text);
+  cursor: pointer;
+  padding: 16px 8px;
+  transition: background .15s, transform .1s, border-color .15s;
+}
+.heatpump-btn:hover  { background: rgba(255, 255, 255, 0.10); }
+.heatpump-btn:active { transform: scale(0.96); }
+.heatpump-btn .hp-icon  { font-size: 2rem; line-height: 1; }
+.heatpump-btn .hp-label { font-size: 1rem; font-weight: 700; }
+.heatpump-btn .hp-sub   { font-size: 1.5rem; font-weight: 700; }
+.heatpump-btn.heat:hover { border-color: #ff7043; }
+.heatpump-btn.cool:hover { border-color: #4fc3f7; }
+.heatpump-status-msg {
+  font-size: 0.8rem;
+  color: #f66;
+  min-height: 1em;
+  text-align: center;
+}
+
+/* Temperature tiles container: fixed square tiles so the modal never scrolls */
+.temp-tiles-container {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 210px);
+  grid-auto-rows: 210px;
+  gap: 16px;
 }
 
 /* Individual temperature tile */
@@ -601,6 +653,7 @@ html, body{
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
 }

@@ -8,7 +8,10 @@ from components.washer_box import  washer_compute
 from components.dryer_box import dryer_compute
 from components.power_box import power_compute
 from components.climate_quality_box import climate_quality_compute
-from components.temperature_modal import create_modal_layout, render_temperature_tiles
+from components.temperature_modal import (
+    create_modal_layout, render_temperature_tiles,
+    HEATPUMP_ENTITY, HEATPUMP_HEAT_TEMP, HEATPUMP_COOL_TEMP,
+)
 from components.anne_button import anne_button_render
 from components.lights_box import lights_render, create_lights_modal_layout
 from components.markis_box import markis_render, create_markis_modal_layout
@@ -274,6 +277,30 @@ def toggle_temperature_modal(open_clicks, close_clicks, is_open):
 def update_temperature_tiles(_n):
     """Update temperature tiles with latest sensor data"""
     return render_temperature_tiles(get_snapshot(), LOCAL_TZ)
+
+# ---- Heat pump (luftvärmepump) buttons ----------------------------------
+@app.callback(
+    Output("heatpump-status-msg", "children"),
+    [Input("heatpump-heat", "n_clicks"),
+     Input("heatpump-cool", "n_clicks"),
+     Input("heatpump-off",  "n_clicks")],
+    prevent_initial_call=True,
+)
+def cb_heatpump_buttons(_heat, _cool, _off):
+    from dash import ctx
+    tid = ctx.triggered_id
+    if tid == "heatpump-heat":
+        success, error_text = call_service("climate", "set_temperature",
+            {"entity_id": HEATPUMP_ENTITY, "hvac_mode": "heat", "temperature": HEATPUMP_HEAT_TEMP})
+    elif tid == "heatpump-cool":
+        success, error_text = call_service("climate", "set_temperature",
+            {"entity_id": HEATPUMP_ENTITY, "hvac_mode": "cool", "temperature": HEATPUMP_COOL_TEMP})
+    elif tid == "heatpump-off":
+        success, error_text = call_service("climate", "set_hvac_mode",
+            {"entity_id": HEATPUMP_ENTITY, "hvac_mode": "off"})
+    else:
+        return ""
+    return "" if success else (error_text or "Fel vid anrop")
 
 # ---- Lights Modal toggle ------------------------------------------------
 @app.callback(

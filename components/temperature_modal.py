@@ -66,6 +66,40 @@ def create_temperature_tile(room_name: str, icon: str, temperature: float | None
     return html.Div(className=tile_class, children=children)
 
 
+# --- Heat pump (luftvärmepump) control ----------------------------------
+# Daikin climate entity, styrs direkt via climate-tjänsterna.
+HEATPUMP_ENTITY = "climate.daikinap61890"
+HEATPUMP_HEAT_TEMP = 21
+HEATPUMP_COOL_TEMP = 19
+
+
+def _heatpump_controls() -> html.Div:
+    """Tre knappar till vänster om temperaturrutorna för att styra värmepumpen."""
+    return html.Div(
+        className="heatpump-controls",
+        children=[
+            html.Button(
+                [html.Div("🔥", className="hp-icon"),
+                 html.Div("Värme", className="hp-label"),
+                 html.Div(f"{HEATPUMP_HEAT_TEMP}°", className="hp-sub")],
+                id="heatpump-heat", n_clicks=0, className="heatpump-btn heat",
+            ),
+            html.Button(
+                [html.Div("❄️", className="hp-icon"),
+                 html.Div("Kyla", className="hp-label"),
+                 html.Div(f"{HEATPUMP_COOL_TEMP}°", className="hp-sub")],
+                id="heatpump-cool", n_clicks=0, className="heatpump-btn cool",
+            ),
+            html.Button(
+                [html.Div("⏻", className="hp-icon"),
+                 html.Div("Av", className="hp-label")],
+                id="heatpump-off", n_clicks=0, className="heatpump-btn off",
+            ),
+            html.Div(id="heatpump-status-msg", className="heatpump-status-msg"),
+        ],
+    )
+
+
 def create_modal_layout() -> html.Div:
     """
     Create the static modal layout structure.
@@ -82,7 +116,7 @@ def create_modal_layout() -> html.Div:
         style={"display": "none"},
         children=[
             html.Div(
-                className="modal-content",
+                className="modal-content temp-modal-content",
                 children=[
                     html.Div(
                         className="modal-header",
@@ -90,7 +124,13 @@ def create_modal_layout() -> html.Div:
                             html.Button("×", id="close-temp-modal", className="modal-close-button"),
                         ],
                     ),
-                    html.Div(id="temp-tiles-container", className="temp-tiles-container"),
+                    html.Div(
+                        className="temp-modal-body",
+                        children=[
+                            _heatpump_controls(),
+                            html.Div(id="temp-tiles-container", className="temp-tiles-container"),
+                        ],
+                    ),
                 ],
             ),
         ],
