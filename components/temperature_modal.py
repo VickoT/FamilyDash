@@ -91,7 +91,7 @@ def _heatpump_controls() -> html.Div:
                 id="heatpump-cool", n_clicks=0, className="heatpump-btn cool",
             ),
             html.Button(
-                [html.Div("⏻", className="hp-icon"),
+                [html.Img(src="/assets/icons/power.svg", className="hp-icon hp-icon-img"),
                  html.Div("Av", className="hp-label")],
                 id="heatpump-off", n_clicks=0, className="heatpump-btn off",
             ),

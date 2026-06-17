@@ -624,6 +624,7 @@ html, body{
 .heatpump-btn:hover  { background: rgba(255, 255, 255, 0.10); }
 .heatpump-btn:active { transform: scale(0.96); }
 .heatpump-btn .hp-icon  { font-size: 2rem; line-height: 1; }
+.heatpump-btn .hp-icon-img { width: 2rem; height: 2rem; }
 .heatpump-btn .hp-label { font-size: 1rem; font-weight: 700; }
 .heatpump-btn .hp-sub   { font-size: 1.5rem; font-weight: 700; }
 .heatpump-btn.heat:hover { border-color: #ff7043; }
